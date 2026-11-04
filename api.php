@@ -1,4 +1,8 @@
 <?php
+// Helper kompatibilitas PHP 5.6+
+function arrGet($arr, $key, $default = '') {
+    return isset($arr[$key]) ? $arr[$key] : $default;
+}
 // Backend PHP (Mendukung MySQL & SQLite via PDO) untuk Rekap Pembelian
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
@@ -24,7 +28,7 @@ function envValue($name, $default = '') {
         }
     }
     $v = getenv($name);
-    return ($v !== false && $v !== '') ? $v : ($env[$name] ?? $default);
+    return ($v !== false && $v !== '') ? $v : (isset($env[$name]) ? $env[$name] : $default);
 }
 
 // Inisialisasi Koneksi Database (PDO: MySQL atau SQLite)
@@ -262,24 +266,24 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':id' => $p['id'],
-        ':tanggal' => $p['tanggal'] ?? '',
-        ':toko' => $p['toko'] ?? '',
-        ':platform' => $p['platform'] ?? '',
-        ':noPesanan' => $p['noPesanan'] ?? '',
-        ':peruntukan' => $p['peruntukan'] ?? '',
-        ':diskon' => floatval($p['diskon'] ?? 0),
-        ':ongkir' => floatval($p['ongkir'] ?? 0),
-        ':biaya' => floatval($p['biaya'] ?? 0),
+        ':tanggal' => arrGet($p, 'tanggal', ''),
+        ':toko' => arrGet($p, 'toko', ''),
+        ':platform' => arrGet($p, 'platform', ''),
+        ':noPesanan' => arrGet($p, 'noPesanan', ''),
+        ':peruntukan' => arrGet($p, 'peruntukan', ''),
+        ':diskon' => floatval(arrGet($p, 'diskon', 0)),
+        ':ongkir' => floatval(arrGet($p, 'ongkir', 0)),
+        ':biaya' => floatval(arrGet($p, 'biaya', 0)),
         ':totalNota' => (isset($p['totalNota']) && $p['totalNota'] !== '') ? floatval($p['totalNota']) : null,
-        ':metode' => $p['metode'] ?? '',
-        ':akun' => $p['akun'] ?? '',
-        ':status' => $p['status'] ?? 'belum',
-        ':tglProses' => $p['tglProses'] ?? '',
-        ':tglBayar' => $p['tglBayar'] ?? '',
-        ':keterangan' => $p['keterangan'] ?? '',
-        ':fotoNota' => $p['fotoNota'] ?? '',
-        ':buktiBayar' => $p['buktiBayar'] ?? '',
-        ':createdAt' => intval($p['createdAt'] ?? time() * 1000)
+        ':metode' => arrGet($p, 'metode', ''),
+        ':akun' => arrGet($p, 'akun', ''),
+        ':status' => arrGet($p, 'status', 'belum'),
+        ':tglProses' => arrGet($p, 'tglProses', ''),
+        ':tglBayar' => arrGet($p, 'tglBayar', ''),
+        ':keterangan' => arrGet($p, 'keterangan', ''),
+        ':fotoNota' => arrGet($p, 'fotoNota', ''),
+        ':buktiBayar' => arrGet($p, 'buktiBayar', ''),
+        ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
     ]);
 
     // Items
@@ -291,10 +295,10 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         foreach ($p['items'] as $idx => $it) {
             $insItem->execute([
                 ':pid' => $p['id'],
-                ':nama' => $it['nama'] ?? '',
-                ':qty' => floatval($it['qty'] ?? 1),
-                ':satuan' => $it['satuan'] ?? '',
-                ':harga' => floatval($it['harga'] ?? 0),
+                ':nama' => arrGet($it, 'nama', ''),
+                ':qty' => floatval(arrGet($it, 'qty', 1)),
+                ':satuan' => arrGet($it, 'satuan', ''),
+                ':harga' => floatval(arrGet($it, 'harga', 0)),
                 ':urutan' => $idx
             ]);
         }
@@ -336,34 +340,34 @@ if ($uri === '/api/sync-all' && $method === 'POST') {
         foreach ($payload['pembelian'] as $p) {
             $stmt->execute([
                 ':id' => $p['id'],
-                ':tanggal' => $p['tanggal'] ?? '',
-                ':toko' => $p['toko'] ?? '',
-                ':platform' => $p['platform'] ?? '',
-                ':noPesanan' => $p['noPesanan'] ?? '',
-                ':peruntukan' => $p['peruntukan'] ?? '',
-                ':diskon' => floatval($p['diskon'] ?? 0),
-                ':ongkir' => floatval($p['ongkir'] ?? 0),
-                ':biaya' => floatval($p['biaya'] ?? 0),
+                ':tanggal' => arrGet($p, 'tanggal', ''),
+                ':toko' => arrGet($p, 'toko', ''),
+                ':platform' => arrGet($p, 'platform', ''),
+                ':noPesanan' => arrGet($p, 'noPesanan', ''),
+                ':peruntukan' => arrGet($p, 'peruntukan', ''),
+                ':diskon' => floatval(arrGet($p, 'diskon', 0)),
+                ':ongkir' => floatval(arrGet($p, 'ongkir', 0)),
+                ':biaya' => floatval(arrGet($p, 'biaya', 0)),
                 ':totalNota' => (isset($p['totalNota']) && $p['totalNota'] !== '') ? floatval($p['totalNota']) : null,
-                ':metode' => $p['metode'] ?? '',
-                ':akun' => $p['akun'] ?? '',
-                ':status' => $p['status'] ?? 'belum',
-                ':tglProses' => $p['tglProses'] ?? '',
-                ':tglBayar' => $p['tglBayar'] ?? '',
-                ':keterangan' => $p['keterangan'] ?? '',
-                ':fotoNota' => $p['fotoNota'] ?? '',
-                ':buktiBayar' => $p['buktiBayar'] ?? '',
-                ':createdAt' => intval($p['createdAt'] ?? time() * 1000)
+                ':metode' => arrGet($p, 'metode', ''),
+                ':akun' => arrGet($p, 'akun', ''),
+                ':status' => arrGet($p, 'status', 'belum'),
+                ':tglProses' => arrGet($p, 'tglProses', ''),
+                ':tglBayar' => arrGet($p, 'tglBayar', ''),
+                ':keterangan' => arrGet($p, 'keterangan', ''),
+                ':fotoNota' => arrGet($p, 'fotoNota', ''),
+                ':buktiBayar' => arrGet($p, 'buktiBayar', ''),
+                ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
             ]);
 
             if (!empty($p['items']) && is_array($p['items'])) {
                 foreach ($p['items'] as $idx => $it) {
                     $insItem->execute([
                         ':pid' => $p['id'],
-                        ':nama' => $it['nama'] ?? '',
-                        ':qty' => floatval($it['qty'] ?? 1),
-                        ':satuan' => $it['satuan'] ?? '',
-                        ':harga' => floatval($it['harga'] ?? 0),
+                        ':nama' => arrGet($it, 'nama', ''),
+                        ':qty' => floatval(arrGet($it, 'qty', 1)),
+                        ':satuan' => arrGet($it, 'satuan', ''),
+                        ':harga' => floatval(arrGet($it, 'harga', 0)),
                         ':urutan' => $idx
                     ]);
                 }
@@ -388,8 +392,8 @@ if ($uri === '/api/baca-nota' && $method === 'POST') {
     if (!function_exists('curl_init')) jsonResponse(['error' => 'Ekstensi PHP cURL belum aktif di server'], 500);
 
     $in = getPayload();
-    $image = $in['image'] ?? '';
-    $mediaType = $in['media_type'] ?? 'image/jpeg';
+    $image = arrGet($in, 'image', '');
+    $mediaType = arrGet($in, 'media_type', 'image/jpeg');
     if ($image === '') jsonResponse(['error' => 'Foto nota kosong'], 400);
 
     $prompt = <<<'PROMPT'
@@ -440,11 +444,11 @@ PROMPT;
     $data = json_decode($res, true) ?: [];
 
     if ($status === 401) jsonResponse(['error' => 'Kunci ANTHROPIC_API_KEY tidak valid.'], 502);
-    if ($status >= 400) jsonResponse(['error' => $data['error']['message'] ?? "Claude error {$status}"], 502);
+    if ($status >= 400) jsonResponse(['error' => (isset($data['error']['message']) ? $data['error']['message'] : "Claude error {$status}")], 502);
 
     $text = '';
-    foreach ($data['content'] ?? [] as $b) {
-        if (($b['type'] ?? '') === 'text') $text .= $b['text'];
+    foreach ((isset($data['content']) && is_array($data['content']) ? $data['content'] : []) as $b) {
+        if ((arrGet($b, 'type', '')) === 'text') $text .= $b['text'];
     }
     $a = strpos($text, '{');
     $b = strrpos($text, '}');
