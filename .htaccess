@@ -1,7 +1,8 @@
 RewriteEngine On
 
-# Arahkan semua request /api/* ke api.php
-RewriteCond %{REQUEST_URI} ^/api/ [NC]
+# Arahkan request api/* (baik di root maupun di subfolder) ke api.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^api/(.*)$ api.php [QSA,L]
 
 # File index.html default

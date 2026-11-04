@@ -494,7 +494,7 @@ const Store = {
   ai: false,
   async init() {
     try {
-      const res = await fetch('/api/state');
+      const res = await fetch('api/state');
       if (res.ok) {
         const d = await res.json();
         this.isServer = true;
@@ -507,7 +507,7 @@ const Store = {
           try {
             const localData = JSON.parse(localRaw);
             if (localData.pembelian && localData.pembelian.length > 0) {
-              await fetch('/api/sync-all', {
+              await fetch('api/sync-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(localData)
@@ -544,13 +544,13 @@ const Store = {
     if (this.isServer) {
       try {
         if (recordToSave) {
-          await fetch('/api/pembelian', {
+          await fetch('api/pembelian', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(recordToSave)
           });
         }
-        await fetch('/api/master', {
+        await fetch('api/master', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(db.master)
@@ -570,7 +570,7 @@ const Store = {
 
     if (this.isServer) {
       try {
-        await fetch('/api/pembelian/' + encodeURIComponent(id), { method: 'DELETE' });
+        await fetch('api/pembelian/' + encodeURIComponent(id), { method: 'DELETE' });
       } catch (e) {}
     }
   },
@@ -578,7 +578,7 @@ const Store = {
     try { localStorage.setItem(KEY, JSON.stringify(fullData)); } catch (e) {}
     if (this.isServer) {
       try {
-        await fetch('/api/sync-all', {
+        await fetch('api/sync-all', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(fullData)

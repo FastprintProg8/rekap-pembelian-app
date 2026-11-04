@@ -161,6 +161,8 @@ if (!$res) {
 
 // Router API
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// Normalisasi URI jika diakses via subfolder (misal: /rekap-pembelian-app/api/... menjadi /api/...)
+$uri = preg_replace('#^.*?(/api(?:/.*)?)$#', '$1', $uri);
 $method = $_SERVER['REQUEST_METHOD'];
 
 function jsonResponse($data, $code = 200) {
