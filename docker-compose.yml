@@ -1,0 +1,12 @@
+services:
+  rekap-pembelian:
+    build: .
+    container_name: rekap-pembelian-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - NOTA_MODEL=${NOTA_MODEL:-claude-sonnet-5-5}
+    volumes:
+      - ./data:/app/data

@@ -1,0 +1,20 @@
+# Node / runtime
+node.exe
+node_modules/
+npm-debug.log*
+
+# Database & temporary logs
+data.db
+data.db-wal
+data.db-shm
+*.lnk
+
+# Environment / Secret keys
+.env
+.env.local
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

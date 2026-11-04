@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5c73">
+<meta name="description" content="Rekap pembelian: nota, barang, sumber dana, dan status pembayaran">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rekap Pembelian">
+<title>Rekap Pembelian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="driver.css">
+<style>
+:root{
+  --bg:#e9edf1; --surface:#ffffff; --surface-2:#f4f6f8; --ink:#14212b; --muted:#5a6a77; --line:#d3dbe2;
+  --accent:#0f5c73; --accent-ink:#ffffff; --accent-soft:#dcebef;
+  --belum:#b06b12; --belum-soft:#fbeedb; --proses:#2a64ad; --proses-soft:#e1ecf9; --bayar:#23774c; --bayar-soft:#ddf2e6;
+  --danger:#b3261e; --warn-bg:#fff4d6; --warn-ink:#7a5200;
+  --shadow:0 1px 2px rgba(20,33,43,.08);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c151e; --surface:#121f2b; --surface-2:#182837; --ink:#e4ebf1; --muted:#8c9eae; --line:#24384a;
+    --accent:#58b4c8; --accent-ink:#06222b; --accent-soft:#163445;
+    --belum:#e3a446; --belum-soft:#33261a; --proses:#73a9ec; --proses-soft:#1a2b43; --bayar:#55c78f; --bayar-soft:#173326;
+    --danger:#f08a82; --warn-bg:#3a2e12; --warn-ink:#f2cf7c;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c151e; --surface:#121f2b; --surface-2:#182837; --ink:#e4ebf1; --muted:#8c9eae; --line:#24384a;
+  --accent:#58b4c8; --accent-ink:#06222b; --accent-soft:#163445;
+  --belum:#e3a446; --belum-soft:#33261a; --proses:#73a9ec; --proses-soft:#1a2b43; --bayar:#55c78f; --bayar-soft:#173326;
+  --danger:#f08a82; --warn-bg:#3a2e12; --warn-ink:#f2cf7c;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+img{max-width:100%}
+[hidden]{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.01em;margin:0;flex:1}
+.brand small{display:block;font-weight:400;font-size:12.5px;color:var(--muted);letter-spacing:0}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn[hidden]{display:none}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--danger)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.icon-btn{border:0;background:transparent;width:36px;height:36px;border-radius:8px;display:inline-grid;place-items:center;color:var(--muted);font-size:20px;line-height:1}
+.icon-btn:hover{background:var(--surface-2);color:var(--ink)}
+
+main{max-width:1200px;margin:0 auto;padding:20px 20px 60px}
+
+/* Status flow — the signature */
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 16px 6px;box-shadow:var(--shadow)}
+.flow-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.flow-head h2{margin:0;font-size:15px;font-weight:600}
+.flow-head p{margin:0;color:var(--muted);font-size:13.5px}
+.flow-head strong{color:var(--ink)}
+.flow-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--surface-2);gap:2px}
+.flow-bar span{transition:flex-grow .35s ease;min-width:0}
+.flow-bar .belum{background:var(--belum)} .flow-bar .diproses{background:var(--proses)} .flow-bar .dibayar{background:var(--bayar)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);margin-top:6px}
+.step{border:0;background:transparent;text-align:left;padding:10px 10px 12px;border-radius:8px;position:relative;display:grid;gap:1px}
+.step:hover{background:var(--surface-2)}
+.step + .step::before{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:1px;background:var(--line)}
+.step .nm{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.step .nm i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.step .amt{font-size:20px;font-weight:700;letter-spacing:-.015em}
+.step .ct{font-size:12.5px;color:var(--muted)}
+.step[aria-pressed="true"]{background:var(--surface-2);box-shadow:inset 0 -3px 0 var(--c)}
+.step[data-s="belum"]{--c:var(--belum)} .step[data-s="diproses"]{--c:var(--proses)} .step[data-s="dibayar"]{--c:var(--bayar)}
+.step i{background:var(--c)}
+
+/* Filters */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px;align-items:center}
+.filters input,.filters select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;font-size:14px;min-width:0}
+.filters .q{flex:1 1 220px}
+.filters .spacer{flex:1}
+.result-note{color:var(--muted);font-size:13px;margin:0 0 8px}
+
+/* List */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:96px minmax(150px,1.2fr) minmax(170px,1.6fr) 110px minmax(140px,1fr) 120px 118px;gap:12px;align-items:center;padding:11px 16px;border-top:1px solid var(--line);font-size:14px}
+.row.head{border-top:0;background:var(--surface-2);font-size:12.5px;color:var(--muted);font-weight:600;padding-top:9px;padding-bottom:9px}
+button.row{width:100%;border-left:0;border-right:0;border-bottom:0;background:transparent;text-align:left;color:inherit}
+button.row:hover{background:var(--surface-2)}
+.row .sub{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .main{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .num{text-align:right;font-weight:600}
+.row .m-date{display:none}
+.row.head .num{font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.belum{color:var(--belum);background:var(--belum-soft)} .pill.diproses{color:var(--proses);background:var(--proses-soft)} .pill.dibayar{color:var(--bayar);background:var(--bayar-soft)}
+.flag{color:var(--warn-ink);background:var(--warn-bg);font-size:11.5px;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600}
+.empty{padding:48px 20px;text-align:center}
+.empty h3{margin:0 0 6px;font-size:17px}
+.empty p{margin:0 auto 16px;color:var(--muted);max-width:46ch}
+
+@media (max-width:860px){
+  .row.head{display:none}
+  .row{grid-template-columns:1fr auto;grid-template-areas:"toko total" "barang status" "meta meta";gap:4px 12px;padding:13px 14px}
+  .row .c-tgl{display:none}
+  .row .c-toko{grid-area:toko} .row .c-barang{grid-area:barang} .row .c-total{grid-area:total}
+  .row .c-status{grid-area:status;justify-self:end} .row .c-per{display:none}
+  .row .c-bayar{grid-area:meta}
+  .row .c-bayar .sub{display:none}
+  .row .c-bayar .main{color:var(--muted);font-size:12.5px}
+  .row .m-date{display:inline}
+  .top-in{padding:10px 14px}
+  main{padding:14px 12px 60px}
+  .step .amt{font-size:16px}
+  .step{padding:8px 6px 10px}
+  .hide-m{display:none}
+}
+
+/* Sheet */
+.sheet-wrap{position:fixed;inset:0;z-index:20;background:rgba(8,15,22,.5);display:flex;justify-content:center;align-items:flex-start;padding:32px 16px;overflow:auto}
+.sheet-wrap[hidden]{display:none}
+.sheet{background:var(--surface);border-radius:14px;width:100%;max-width:1080px;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3);animation:rise .18s ease-out}
+.sheet.narrow{max-width:640px}
+@keyframes rise{from{transform:translateY(10px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.flow-bar span{transition:none}}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:14px 16px 12px 20px;border-bottom:1px solid var(--line)}
+.sheet-head h2{margin:0;font-size:17px;flex:1}
+.sheet-body{padding:18px 20px}
+.sheet-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--line);background:var(--surface-2);border-radius:0 0 14px 14px;flex-wrap:wrap}
+@media (max-width:720px){
+  .sheet-wrap{padding:0}
+  .sheet{border-radius:0;min-height:100%;padding-top:env(safe-area-inset-top,0px)}
+  .sheet-foot{position:sticky;bottom:0;border-radius:0;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .sheet-body{padding:14px}
+}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:24px}
+@media (max-width:860px){.form-grid{grid-template-columns:1fr}}
+.photo-col{position:sticky;top:0;align-self:start}
+@media (max-width:860px){.photo-col{position:static}}
+.drop{border:1.5px dashed var(--line);border-radius:10px;background:var(--surface-2);min-height:200px;display:grid;place-items:center;text-align:center;padding:16px;color:var(--muted);font-size:13.5px;position:relative}
+.drop.has{padding:0;border-style:solid;overflow:hidden;background:#000}
+.drop img{display:block;width:100%;max-height:70vh;object-fit:contain;cursor:zoom-in}
+.drop label{cursor:pointer}
+.drop strong{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.photo-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+fieldset{border:0;margin:0 0 20px;padding:0}
+legend{font-weight:700;font-size:14px;margin-bottom:10px;padding:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.field{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.field.wide{grid-column:1/-1}
+.field input,.field select,.field textarea,.items input{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 10px;font-size:14.5px;color:var(--ink);width:100%;min-width:0}
+.field textarea{resize:vertical;min-height:60px}
+input[type=number]{text-align:right}
+.req::after{content:" *";color:var(--danger)}
+.items{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:minmax(140px,1fr) 70px 80px 120px 110px 36px;gap:8px;align-items:center}
+.item .sub-t{text-align:right;font-weight:600;font-size:14px}
+.items-head{display:grid;grid-template-columns:minmax(140px,1fr) 70px 80px 120px 110px 36px;gap:8px;font-size:12px;color:var(--muted)}
+.items-head span:nth-child(n+2){text-align:right}
+.items-head span:nth-child(3){text-align:left}
+@media (max-width:640px){
+  .items-head{display:none}
+  .item{grid-template-columns:1fr 1fr 1fr 36px;grid-template-areas:"n n n d" "q s h h" "t t t t";background:var(--surface-2);padding:10px;border-radius:8px}
+  .item .i-n{grid-area:n}.item .i-q{grid-area:q}.item .i-s{grid-area:s}.item .i-h{grid-area:h}.item .sub-t{grid-area:t}.item .icon-btn{grid-area:d}
+}
+.totals{background:var(--surface-2);border-radius:10px;padding:12px 14px;display:grid;gap:4px;font-size:14px}
+.totals div{display:flex;justify-content:space-between;gap:12px}
+.totals .grand{font-size:17px;font-weight:700;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:9px 12px;font-size:13.5px;margin-top:10px}
+.ok{color:var(--bayar);font-size:13px;margin-top:8px}
+
+/* Detail */
+.d-grid{display:grid;grid-template-columns:minmax(240px,340px) 1fr;gap:24px}
+@media (max-width:860px){.d-grid{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px 18px;margin:0 0 18px}
+.kv div{display:grid;gap:1px}
+.kv dt{font-size:12.5px;color:var(--muted)}
+.kv dd{margin:0;font-weight:500}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+.t-wrap{overflow-x:auto;margin-bottom:12px}
+table.t th{font-size:12.5px;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:8px;border-bottom:1px solid var(--line)}
+table.t .n{text-align:right;white-space:nowrap}
+.timeline{display:flex;gap:0;margin:4px 0 18px;list-style:none;padding:0}
+.timeline li{flex:1;position:relative;padding-top:18px;font-size:13px;color:var(--muted)}
+.timeline li::before{content:"";position:absolute;top:4px;left:0;right:0;height:3px;background:var(--line)}
+.timeline li::after{content:"";position:absolute;top:0;left:0;width:11px;height:11px;border-radius:50%;background:var(--surface);border:2px solid var(--line)}
+.timeline li.done::before{background:var(--c)}
+.timeline li.done::after{background:var(--c);border-color:var(--c)}
+.timeline li b{display:block;color:var(--ink);font-weight:600}
+.timeline li:nth-child(1){--c:var(--muted)} .timeline li:nth-child(2){--c:var(--proses)} .timeline li:nth-child(3){--c:var(--bayar)}
+.pay-box{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:6px;background:var(--surface-2)}
+.pay-box h3{margin:0 0 10px;font-size:14.5px}
+.thumb{width:100%;border-radius:8px;cursor:zoom-in;display:block;background:#000;max-height:60vh;object-fit:contain}
+.no-photo{border:1px dashed var(--line);border-radius:10px;padding:30px 12px;text-align:center;color:var(--muted);font-size:13.5px}
+
+/* Master */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 11px;font-size:13.5px}
+.chip button{border:0;background:transparent;color:var(--muted);width:22px;height:22px;border-radius:50%;font-size:15px;line-height:1}
+.chip button:hover{background:var(--line);color:var(--ink)}
+.add-row{display:flex;gap:6px}
+.add-row input{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 10px;font-size:14px;min-width:0}
+.master-sec{margin-bottom:20px}
+.master-sec h3{margin:0 0 4px;font-size:14.5px}
+.master-sec p{margin:0 0 8px;color:var(--muted);font-size:13px}
+
+/* Baca nota otomatis */
+#aiStatus{margin-top:10px}
+.ai-hint{margin:0;font-size:12.5px;color:var(--muted)}
+.ai-box{margin:0;border-radius:8px;padding:10px 12px;font-size:13.5px;background:var(--accent-soft);color:var(--ink);display:block}
+.ai-box.ok{background:var(--bayar-soft)}
+.ai-box.err{background:var(--warn-bg);color:var(--warn-ink)}
+.ai-box span{color:var(--muted);font-size:12.5px}
+.ai-box .btn{margin-top:8px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+.set-box{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:22px}
+.set-box h3{margin:0 0 4px;font-size:14.5px}
+.set-box > p{margin:0 0 10px;color:var(--muted);font-size:13px}
+
+/* Lightbox & toast */
+.lightbox{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:16px;cursor:zoom-out}
+.lightbox[hidden]{display:none}
+.lightbox img{max-height:100%;max-width:100%;object-fit:contain}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:8px;font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.toast.err{background:var(--danger);color:#fff}
+.toast[hidden]{display:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1 class="brand">Rekap Pembelian<small>Nota, barang, dan status pembayaran</small></h1>
+    <button class="btn ghost hide-m" id="btnTutorial" type="button" title="Panduan cara pakai aplikasi">💡 Panduan</button>
+    <button class="btn ghost hide-m" id="btnMaster" type="button">Data master</button>
+    <button class="btn sm" id="btnInstall" type="button" title="Pasang sebagai aplikasi" hidden>Pasang</button>
+    <button class="icon-btn" id="btnMenu" type="button" aria-label="Menu lainnya" title="Menu lainnya">⋯</button>
+    <button class="btn primary" id="btnAdd" type="button"><span aria-hidden="true">+</span> Catat pembelian</button>
+  </div>
+</header>
+
+<main>
+  <section class="flow" aria-labelledby="flowTitle">
+    <div class="flow-head">
+      <h2 id="flowTitle">Alur pembayaran</h2>
+      <p id="flowNote"></p>
+    </div>
+    <div class="flow-bar" aria-hidden="true">
+      <span class="belum" id="barBelum"></span><span class="diproses" id="barProses"></span><span class="dibayar" id="barBayar"></span>
+    </div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <div class="filters">
+    <label class="sr" for="fQ">Cari</label>
+    <input class="q" id="fQ" type="search" placeholder="Cari barang, toko, atau no. pesanan">
+    <label class="sr" for="fPer">Peruntukan</label>
+    <select id="fPer"></select>
+    <label class="sr" for="fBulan">Bulan</label>
+    <input id="fBulan" type="month">
+    <button class="btn sm ghost" id="fReset" type="button">Hapus filter</button>
+  </div>
+  <p class="result-note" id="resultNote"></p>
+  <div class="list" id="list"></div>
+</main>
+
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <header class="sheet-head"><h2 id="sheetTitle"></h2><button class="icon-btn" id="sheetClose" type="button" aria-label="Tutup">×</button></header>
+    <div class="sheet-body" id="sheetBody"></div>
+    <footer class="sheet-foot" id="sheetFoot"></footer>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><img id="lightImg" alt="Foto diperbesar"></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<datalist id="satuanList"><option value="pcs"><option value="unit"><option value="box"><option value="set"><option value="pak"><option value="rim"><option value="roll"><option value="lusin"><option value="kg"><option value="liter"></datalist>
+
+<script src="driver.js.iife.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- Driver.js Tutorial Guide ---------- */
+function startTutorial() {
+  if (typeof window.driver === 'undefined' || typeof window.driver.js === 'undefined') {
+    toast('Panduan Driver.js sedang dimuat...', false);
+    return;
+  }
+  const driverObj = window.driver.js.driver({
+    showProgress: true,
+    animate: true,
+    allowClose: true,
+    nextBtnText: 'Lanjut →',
+    prevBtnText: '← Kembali',
+    doneBtnText: 'Selesai ✓',
+    steps: [
+      {
+        element: '.brand',
+        popover: {
+          title: 'Selamat Datang di Rekap Pembelian!',
+          description: 'Aplikasi ini membantu Anda mencatat nota belanja, rincian barang, sumber dana pembayaran, dan memantau status pesanan hingga lunas.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#btnAdd',
+        popover: {
+          title: '1. Catat Pembelian Baru',
+          description: 'Klik tombol ini untuk memasukkan nota baru. Anda bisa memotret nota/upload gambar, mengisi toko, rincian item, dan harga.',
+          side: 'bottom',
+          align: 'end'
+        }
+      },
+      {
+        element: '.flow',
+        popover: {
+          title: '2. Alur & Status Pembayaran',
+          description: 'Status otomatis dibagi 3 tahap:\n• <b>Belum diproses</b>: Nota baru dicatat\n• <b>Diproses</b>: Sudah ada sumber dana (kartu/rekening)\n• <b>Dibayar</b>: Sudah lunas dibayar\n\nKlik kartu untuk memfilter pesanan!',
+          side: 'bottom',
+          align: 'center'
+        }
+      },
+      {
+        element: '.filters',
+        popover: {
+          title: '3. Filter & Pencarian',
+          description: 'Cari pembelian dengan cepat berdasarkan nama barang, toko, nomor pesanan, divisi/peruntukan, atau bulan transaksi.',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      {
+        element: '#list',
+        popover: {
+          title: '4. Daftar Transaksi',
+          description: 'Semua riwayat pembelian tersimpan di database SQLite. Klik transaksi untuk melihat nota, memperbesar foto, atau menandai pembayaran.',
+          side: 'top',
+          align: 'center'
+        }
+      },
+      {
+        element: '#btnMaster',
+        popover: {
+          title: '5. Data Master',
+          description: 'Kelola kategori peruntukan cabang/divisi, rekening sumber dana, dan daftar platform belanja.',
+          side: 'bottom',
+          align: 'end'
+        }
+      },
+      {
+        element: '#btnMenu',
+        popover: {
+          title: '6. Menu & Ekspor',
+          description: 'Salin format teks ringkasan untuk WhatsApp, ekspor ke file Excel (CSV), dan cadangkan data Anda.',
+          side: 'bottom',
+          align: 'end'
+        }
+      }
+    ]
+  });
+
+  driverObj.drive();
+}
+
+function startFormTutorial() {
+  if (typeof window.driver === 'undefined' || typeof window.driver.js === 'undefined') return;
+
+  const formDriver = window.driver.js.driver({
+    showProgress: true,
+    animate: true,
+    allowClose: true,
+    nextBtnText: 'Lanjut →',
+    prevBtnText: '← Kembali',
+    doneBtnText: 'Paham ✓',
+    steps: [
+      {
+        element: '#dropZone',
+        popover: {
+          title: '1. Unggah / Foto Nota',
+          description: 'Ambil foto nota langsung lewat kamera HP atau upload file gambar dari galeri/PC. Foto akan tampil di sini sehingga Anda mudah menyalin barang sambil melihat nota.',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      {
+        element: '#aiStatus',
+        popover: {
+          title: 'Baca nota otomatis',
+          description: 'Setelah foto diunggah, nama toko, tanggal, barang, harga, potongan, ongkir, dan total terisi sendiri. Periksa hasilnya, lalu lengkapi <b>peruntukan, metode bayar, dan sumber dana</b>.',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      {
+        element: '#fsInfo',
+        popover: {
+          title: '2. Info Pembelian',
+          description: 'Isi tanggal nota, nama toko, tempat beli (Tokopedia, Shopee, offline), nomor pesanan, dan <b>Peruntukan</b> (cabang/divisi yang membutuhkan).',
+          side: 'left',
+          align: 'start'
+        }
+      },
+      {
+        element: '#fsBarang',
+        popover: {
+          title: '3. Rincian Barang',
+          description: 'Tulis nama barang, kuantitas (qty), satuan (pcs, unit, dll), dan harga per satuan. Klik <b>+ Tambah barang</b> jika ada banyak item dalam satu nota.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#fsBiaya',
+        popover: {
+          title: '4. Diskon, Ongkir & Total',
+          description: 'Masukkan diskon voucher, ongkos kirim, atau biaya admin. Masukkan juga <b>Total tertulis di nota</b> untuk memastikan hitungan otomatis cocok tanpa selisih.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#fsBayar',
+        popover: {
+          title: '5. Sumber Dana & Pembayaran',
+          description: 'Isi <b>Sumber dana</b> (misal: Rekening BCA, DBS, Kartu Kredit). Bila sumber dana terisi, status otomatis berubah menjadi <b>Diproses</b>.',
+          side: 'top',
+          align: 'start'
+        }
+      },
+      {
+        element: '#btnSave',
+        popover: {
+          title: '6. Simpan Pembelian',
+          description: 'Setelah semua data terisi dengan benar, klik tombol ini. Transaksi langsung tersimpan ke database SQLite!',
+          side: 'top',
+          align: 'end'
+        }
+      }
+    ]
+  });
+
+  formDriver.drive();
+}
+
+const KEY = 'rekap-pembelian:v1';
+const STATUS = {
+  belum:    { label: 'Belum diproses' },
+  diproses: { label: 'Diproses' },
+  dibayar:  { label: 'Dibayar' }
+};
+const DEFAULT_MASTER = {
+  peruntukan: ['G22', 'G23'],
+  akun: ['DBS ****4648'],
+  platform: ['Tokopedia', 'Shopee', 'Toko offline', 'Lainnya'],
+  metode: ['Kartu kredit', 'Transfer bank', 'Tunai', 'Lainnya']
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+let db = { pembelian: [], master: clone(DEFAULT_MASTER), mig: 2 };
+const ui = { status: '', q: '', per: '', bulan: '' };
+
+/* ---------- Storage layer (SQLite backend dengan fallback localStorage) ---------- */
+const Store = {
+  isServer: false,
+  ai: false,
+  async init() {
+    try {
+      const res = await fetch('/api/state');
+      if (res.ok) {
+        const d = await res.json();
+        this.isServer = true;
+        this.ai = !!d.ai;
+        db.pembelian = Array.isArray(d.pembelian) ? d.pembelian : [];
+        db.master = Object.assign(clone(DEFAULT_MASTER), d.master || {});
+        // Jika di localStorage ada data lama tapi di server masih kosong, tawarkan/migrasikan
+        const localRaw = localStorage.getItem(KEY);
+        if (localRaw && db.pembelian.length === 0) {
+          try {
+            const localData = JSON.parse(localRaw);
+            if (localData.pembelian && localData.pembelian.length > 0) {
+              await fetch('/api/sync-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(localData)
+              });
+              db.pembelian = localData.pembelian;
+              db.master = Object.assign(clone(DEFAULT_MASTER), localData.master || {});
+              toast('Data lokal berhasil dipindahkan ke database SQLite!');
+            }
+          } catch (_) {}
+        }
+        return;
+      }
+    } catch (_) {
+      // offline / file:// protocol / server mati
+      this.isServer = false;
+    }
+    this.loadLocal();
+  },
+  loadLocal() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      db.pembelian = Array.isArray(d.pembelian) ? d.pembelian : [];
+      db.master = Object.assign(clone(DEFAULT_MASTER), d.master || {});
+      if (!(d.mig >= 2) && !db.master.peruntukan.includes('G23')) db.master.peruntukan.push('G23');
+    } catch (e) { /* storage kosong atau tidak tersedia */ }
+  },
+  async save(recordToSave) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(db));
+    } catch (e) {}
+
+    if (this.isServer) {
+      try {
+        if (recordToSave) {
+          await fetch('/api/pembelian', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(recordToSave)
+          });
+        }
+        await fetch('/api/master', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(db.master)
+        });
+        return true;
+      } catch (err) {
+        toast('Gagal menyimpan ke SQLite server, tersimpan di lokal.', true);
+        return true;
+      }
+    }
+    return true;
+  },
+  async deleteRecord(id) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(db));
+    } catch (e) {}
+
+    if (this.isServer) {
+      try {
+        await fetch('/api/pembelian/' + encodeURIComponent(id), { method: 'DELETE' });
+      } catch (e) {}
+    }
+  },
+  async syncAll(fullData) {
+    try { localStorage.setItem(KEY, JSON.stringify(fullData)); } catch (e) {}
+    if (this.isServer) {
+      try {
+        await fetch('/api/sync-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fullData)
+        });
+      } catch (e) {}
+    }
+  }
+};
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const rp = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const fmtDate = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '–';
+const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function calc(p) {
+  const sub = (p.items || []).reduce((a, it) => a + num(it.qty) * num(it.harga), 0);
+  const total = sub - num(p.diskon) + num(p.ongkir) + num(p.biaya);
+  return { sub, total };
+}
+function mismatch(p) {
+  if (p.totalNota === '' || p.totalNota == null) return 0;
+  const d = num(p.totalNota) - calc(p).total;
+  return Math.abs(d) >= 1 ? d : 0;
+}
+function opts(list, sel, placeholder) {
+  let h = placeholder ? `<option value="">${esc(placeholder)}</option>` : '';
+  const arr = sel && !list.includes(sel) ? [...list, sel] : list;
+  return h + arr.map(v => `<option${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join('');
+}
+let toastT;
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, err ? 5000 : 2600);
+}
+function compress(file, max = 1400, q = 0.72) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('File ini bukan gambar yang bisa dibaca. Gunakan JPG atau PNG.')); };
+    img.src = url;
+  });
+}
+
+/* ---------- Main render ---------- */
+function filtered(ignoreStatus) {
+  const q = ui.q.trim().toLowerCase();
+  return db.pembelian.filter(p => {
+    if (!ignoreStatus && ui.status && p.status !== ui.status) return false;
+    if (ui.per && p.peruntukan !== ui.per) return false;
+    if (ui.bulan && !(p.tanggal || '').startsWith(ui.bulan)) return false;
+    if (q) {
+      const hay = [p.toko, p.platform, p.noPesanan, p.keterangan, p.peruntukan, p.akun, ...(p.items || []).map(i => i.nama)].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }).sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || '') || (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+function renderFlow() {
+  const base = filtered(true);
+  const agg = { belum: [0, 0], diproses: [0, 0], dibayar: [0, 0] };
+  base.forEach(p => { const a = agg[p.status] || agg.belum; a[0]++; a[1] += calc(p).total; });
+  const sum = agg.belum[1] + agg.diproses[1] + agg.dibayar[1];
+  $('#barBelum').style.flexGrow = sum ? agg.belum[1] : 1;
+  $('#barProses').style.flexGrow = sum ? agg.diproses[1] : 1;
+  $('#barBayar').style.flexGrow = sum ? agg.dibayar[1] : 1;
+  const outstanding = agg.belum[1] + agg.diproses[1], outN = agg.belum[0] + agg.diproses[0];
+  $('#flowNote').innerHTML = base.length
+    ? `Belum dibayar <strong>${rp(outstanding)}</strong> dari ${outN} pesanan`
+    : 'Belum ada pembelian tercatat';
+  $('#steps').innerHTML = Object.keys(STATUS).map(s => `
+    <button class="step" type="button" data-s="${s}" aria-pressed="${ui.status === s}">
+      <span class="nm"><i></i>${STATUS[s].label}</span>
+      <span class="amt">${rp(agg[s][1])}</span>
+      <span class="ct">${agg[s][0]} pesanan</span>
+    </button>`).join('');
+}
+
+function renderList() {
+  const rows = filtered(false);
+  const el = $('#list');
+  const anyFilter = ui.status || ui.q || ui.per || ui.bulan;
+  $('#resultNote').textContent = anyFilter ? `${rows.length} pesanan sesuai filter${ui.status ? ' (status: ' + STATUS[ui.status].label.toLowerCase() + ')' : ''}` : '';
+  if (!db.pembelian.length) {
+    el.innerHTML = `<div class="empty"><h3>Belum ada pembelian</h3><p>Catat pembelian pertama dengan mengunggah foto nota, lalu isi barang dan cara pembayarannya.</p><button class="btn primary" type="button" data-act="add">Catat pembelian</button></div>`;
+    return;
+  }
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty"><h3>Tidak ada pesanan yang cocok</h3><p>Ubah kata kunci atau hapus filter untuk melihat semua pembelian.</p><button class="btn" type="button" data-act="reset">Hapus filter</button></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="row head" role="presentation"><span>Tanggal</span><span>Toko</span><span>Barang</span><span>Peruntukan</span><span>Sumber dana</span><span class="num">Total</span><span>Status</span></div>` +
+    rows.map(p => {
+      const { total } = calc(p); const items = p.items || [];
+      const first = items[0] ? `${items[0].nama} (${num(items[0].qty)} ${items[0].satuan || ''})` : 'Tanpa barang';
+      const more = items.length > 1 ? `+${items.length - 1} barang lainnya` : (p.noPesanan ? 'No. ' + p.noPesanan : '');
+      return `<button class="row" type="button" data-id="${p.id}">
+        <span class="c-tgl">${fmtDate(p.tanggal)}</span>
+        <span class="c-toko"><span class="main">${esc(p.toko || p.platform || 'Toko belum diisi')}</span><span class="sub">${esc(p.platform && p.toko ? p.platform : '')}<span class="m-date">${p.platform && p.toko ? ', ' : ''}${fmtDate(p.tanggal)}</span></span></span>
+        <span class="c-barang"><span class="main">${esc(first)}</span><span class="sub">${esc(more)}</span></span>
+        <span class="c-per">${esc(p.peruntukan || '–')}</span>
+        <span class="c-bayar"><span class="main">${esc(p.akun || 'Sumber dana belum diisi')}</span><span class="sub">${esc(p.metode || '')}</span></span>
+        <span class="c-total num">${rp(total)}${mismatch(p) ? '<span class="flag" title="Total di nota berbeda dengan hitungan">Cek</span>' : ''}</span>
+        <span class="c-status"><span class="pill ${p.status}">${STATUS[p.status].label}</span></span>
+      </button>`;
+    }).join('');
+}
+
+function renderFilters() {
+  const per = $('#fPer'); const cur = ui.per;
+  per.innerHTML = opts(db.master.peruntukan, cur, 'Semua peruntukan');
+}
+
+function render() { renderFlow(); renderList(); }
+
+/* ---------- Sheet ---------- */
+let onSheetClose = null;
+function openSheet(title, body, foot, narrow) {
+  $('#sheetTitle').textContent = title;
+  $('#sheetBody').oninput = null; $('#sheetBody').onchange = null;
+  $('#sheetBody').innerHTML = body;
+  $('#sheetFoot').innerHTML = foot || '';
+  $('#sheetFoot').hidden = !foot;
+  $('#sheet').classList.toggle('narrow', !!narrow);
+  $('#sheetWrap').hidden = false;
+  $('#sheetWrap').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet() {
+  $('#sheetWrap').hidden = true; document.body.style.overflow = '';
+  if (onSheetClose) { const f = onSheetClose; onSheetClose = null; f(); }
+}
+function lightbox(src) { $('#lightImg').src = src; $('#lightbox').hidden = false; }
+
+/* ---------- Form ---------- */
+let form = null;
+const blankItem = () => ({ nama: '', qty: 1, satuan: 'pcs', harga: '' });
+function openForm(existing, draft) {
+  form = draft ? draft : existing ? clone(existing) : {
+    id: null, tanggal: today(), toko: '', platform: '', noPesanan: '', peruntukan: '',
+    items: [blankItem()], diskon: '', ongkir: '', biaya: '', totalNota: '',
+    metode: '', akun: '', status: 'belum', keterangan: '', fotoNota: '', buktiBayar: ''
+  };
+  if (!form.items || !form.items.length) form.items = [blankItem()];
+  const isEdit = !!(form.id && db.pembelian.some(p => p.id === form.id));
+  const m = db.master;
+  const body = `
+  <div class="form-grid">
+    <div class="photo-col">
+      <div id="dropZone"></div>
+      <div class="photo-actions" id="photoActions"></div>
+      <div id="aiStatus"></div>
+      ${isEdit ? '' : '<p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">Belum punya nota? <button class="btn sm ghost" type="button" id="btnSample" style="padding:2px 4px;color:var(--accent)">Isi dengan contoh nota</button></p>'}
+    </div>
+    <div>
+      <fieldset id="fsInfo">
+        <legend>Info pembelian</legend>
+        <div class="fields">
+          <label class="field"><span class="req">Tanggal pembelian</span><input type="date" name="tanggal" value="${esc(form.tanggal)}" required></label>
+          <label class="field"><span>Toko / supplier</span><input name="toko" value="${esc(form.toko)}" placeholder="Nama toko"></label>
+          <label class="field"><span>Platform</span><select name="platform">${opts(m.platform, form.platform, 'Pilih platform')}</select></label>
+          <label class="field"><span>No. pesanan / invoice</span><input name="noPesanan" value="${esc(form.noPesanan)}" placeholder="Untuk cek nota ganda"></label>
+          <label class="field"><span class="req">Peruntukan</span><select name="peruntukan">${opts(m.peruntukan, form.peruntukan, 'Pilih peruntukan')}</select></label>
+        </div>
+        <p class="warn" id="dupWarn" hidden></p>
+      </fieldset>
+      <fieldset id="fsBarang">
+        <legend>Barang</legend>
+        <div class="items-head"><span>Nama barang</span><span>Qty</span><span>Satuan</span><span>Harga satuan</span><span>Subtotal</span><span></span></div>
+        <div class="items" id="items"></div>
+        <button class="btn sm" type="button" id="btnAddItem" style="margin-top:10px">+ Tambah barang</button>
+      </fieldset>
+      <fieldset id="fsBiaya">
+        <legend>Potongan, biaya, dan total</legend>
+        <div class="fields">
+          <label class="field"><span>Diskon / voucher</span><input type="number" min="0" step="any" inputmode="decimal" name="diskon" value="${esc(form.diskon)}" placeholder="0"></label>
+          <label class="field"><span>Ongkos kirim</span><input type="number" min="0" step="any" inputmode="decimal" name="ongkir" value="${esc(form.ongkir)}" placeholder="0"></label>
+          <label class="field"><span>Biaya layanan / admin</span><input type="number" min="0" step="any" inputmode="decimal" name="biaya" value="${esc(form.biaya)}" placeholder="0"></label>
+          <label class="field"><span>Total tertulis di nota</span><input type="number" min="0" step="any" inputmode="decimal" name="totalNota" value="${esc(form.totalNota)}" placeholder="Untuk dicocokkan"></label>
+        </div>
+        <div class="totals" id="totals" style="margin-top:12px"></div>
+        <div id="checkMsg"></div>
+      </fieldset>
+      <fieldset id="fsBayar">
+        <legend>Pembayaran</legend>
+        <div class="fields">
+          <label class="field"><span>Sumber dana</span><input name="akun" list="akunList" value="${esc(form.akun)}" placeholder="mis. DBS ****4648" autocomplete="off"></label>
+          <label class="field"><span>Metode bayar</span><select name="metode">${opts(m.metode, form.metode, 'Pilih metode')}</select></label>
+          <div class="field"><span>Status</span><span id="autoStatus" style="display:grid;gap:3px"></span></div>
+          <datalist id="akunList">${m.akun.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+          <label class="field wide"><span>Keterangan</span><textarea name="keterangan" placeholder="Catatan tambahan">${esc(form.keterangan)}</textarea></label>
+        </div>
+      </fieldset>
+    </div>
+  </div>`;
+  const foot = `<button class="btn ghost" type="button" id="btnFormHelp" style="margin-right:auto">❓ Panduan Form</button><button class="btn ghost" type="button" data-act="close">Batal</button><button class="btn primary" type="button" id="btnSave">${isEdit ? 'Simpan perubahan' : 'Simpan pembelian'}</button>`;
+  openSheet(isEdit ? 'Ubah pembelian' : 'Catat pembelian', body, foot);
+  renderPhoto(); renderItems(); renderTotals(); checkDup(); renderAutoStatus();
+
+  $('#btnFormHelp').onclick = startFormTutorial;
+
+  const bodyEl = $('#sheetBody');
+  bodyEl.oninput = onFormInput;
+  bodyEl.onchange = onFormInput;
+  $('#btnAddItem').onclick = () => { form.items.push(blankItem()); renderItems(); renderTotals(); $('#items').lastElementChild.querySelector('input').focus(); };
+  $('#btnSave').onclick = saveForm;
+  const s = $('#btnSample'); if (s) s.onclick = fillSample;
+}
+function onFormInput(e) {
+  const t = e.target;
+  if (t.dataset.f != null) {
+    const i = +t.closest('.item').dataset.i; form.items[i][t.dataset.f] = t.value;
+    const it = form.items[i];
+    t.closest('.item').querySelector('.sub-t').textContent = rp(num(it.qty) * num(it.harga));
+    renderTotals();
+  } else if (t.name && t.type !== 'file') {
+    form[t.name] = t.value;
+    if (['diskon', 'ongkir', 'biaya', 'totalNota'].includes(t.name)) renderTotals();
+    if (t.name === 'noPesanan') checkDup();
+    if (t.name === 'akun') renderAutoStatus();
+  }
+}
+function renderItems() {
+  $('#items').innerHTML = form.items.map((it, i) => `
+    <div class="item" data-i="${i}">
+      <input class="i-n" data-f="nama" value="${esc(it.nama)}" placeholder="Nama barang" aria-label="Nama barang ${i + 1}">
+      <input class="i-q" data-f="qty" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.qty)}" aria-label="Kuantitas">
+      <input class="i-s" data-f="satuan" value="${esc(it.satuan)}" list="satuanList" aria-label="Satuan" style="text-align:left">
+      <input class="i-h" data-f="harga" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.harga)}" placeholder="Harga satuan" aria-label="Harga satuan">
+      <span class="sub-t">${rp(num(it.qty) * num(it.harga))}</span>
+      <button class="icon-btn" type="button" data-del="${i}" aria-label="Hapus barang ${i + 1}" ${form.items.length < 2 ? 'disabled style="opacity:.3"' : ''}>×</button>
+    </div>`).join('');
+  $('#items').querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    if (form.items.length < 2) return; form.items.splice(+b.dataset.del, 1); renderItems(); renderTotals();
+  });
+}
+function renderTotals() {
+  const { sub, total } = calc(form);
+  $('#totals').innerHTML = `
+    <div><span>Subtotal barang</span><span>${rp(sub)}</span></div>
+    ${num(form.diskon) ? `<div><span>Diskon / voucher</span><span>−${rp(num(form.diskon))}</span></div>` : ''}
+    ${num(form.ongkir) ? `<div><span>Ongkos kirim</span><span>${rp(num(form.ongkir))}</span></div>` : ''}
+    ${num(form.biaya) ? `<div><span>Biaya layanan</span><span>${rp(num(form.biaya))}</span></div>` : ''}
+    <div class="grand"><span>Total pesanan</span><span>${rp(total)}</span></div>`;
+  const d = mismatch(form);
+  $('#checkMsg').innerHTML = form.totalNota === '' || form.totalNota == null ? '' :
+    d ? `<p class="warn">Total di nota ${rp(num(form.totalNota))}, hasil hitung ${rp(total)}. Selisih ${rp(Math.abs(d))}. Periksa apakah ada diskon, ongkir, atau biaya yang belum diisi.</p>`
+      : `<p class="ok">Total cocok dengan nota.</p>`;
+}
+function renderAutoStatus() {
+  const el = $('#autoStatus'); if (!el) return;
+  const s = form.status === 'dibayar' ? 'dibayar' : ((form.akun || '').trim() ? 'diproses' : 'belum');
+  const note = s === 'dibayar' ? 'Sudah dibayar' : s === 'diproses' ? 'Otomatis karena sumber dana terisi' : 'Berubah menjadi Diproses saat sumber dana diisi';
+  el.innerHTML = `<span class="pill ${s}" style="justify-self:start">${STATUS[s].label}</span><small style="font-size:12px">${note}</small>`;
+}
+function checkDup() {
+  const w = $('#dupWarn'); const no = (form.noPesanan || '').trim().toLowerCase();
+  const dup = no && db.pembelian.find(p => p.id !== form.id && (p.noPesanan || '').trim().toLowerCase() === no);
+  w.hidden = !dup;
+  if (dup) w.textContent = `No. pesanan ini sudah tercatat pada ${fmtDate(dup.tanggal)} (${dup.toko || dup.platform || 'tanpa nama toko'}). Pastikan nota ini tidak dicatat dua kali.`;
+}
+function renderPhoto() {
+  const z = $('#dropZone'), a = $('#photoActions');
+  if (form.fotoNota) {
+    z.className = 'drop has';
+    z.innerHTML = `<img src="${form.fotoNota}" alt="Foto nota">`;
+    z.querySelector('img').onclick = () => lightbox(form.fotoNota);
+    a.innerHTML = `<label class="btn sm">Ganti foto<input type="file" accept="image/*" hidden id="fileNota"></label><button class="btn sm ghost danger" type="button" id="rmNota">Hapus foto</button>`;
+    $('#rmNota').onclick = () => { form.fotoNota = ''; form._src = ''; form._ai = null; renderPhoto(); };
+  } else {
+    z.className = 'drop';
+    z.innerHTML = `<label><strong>Unggah foto nota</strong>Ambil foto atau pilih gambar dari galeri.<br>Foto tampil di sini agar mudah dicocokkan saat mengisi.<input type="file" accept="image/*" hidden id="fileNota"></label>`;
+    a.innerHTML = '';
+  }
+  $('#fileNota').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { form.fotoNota = await compress(f); } catch (err) { toast(err.message, true); return; }
+    form._src = aiReady() ? await compress(f, 2000, 0.85).catch(() => '') : '';
+    form._ai = null; renderPhoto();
+    if (aiReady()) runAI();
+  };
+  renderAI();
+}
+/* ---------- Baca nota otomatis ---------- */
+// Pengaturan disimpan terpisah dari data dan tidak ikut ke file cadangan.
+const AI_KEY = 'rekap-pembelian:ai';
+const DEFAULT_GEMINI_KEY = '';
+const NOTA_PROMPT = `Anda membaca foto nota, struk, invoice, atau rincian pesanan belanja di Indonesia.
+Kembalikan HANYA format JSON berikut:
+{
+  "toko": string atau null,
+  "platform": string atau null,
+  "tanggal": "YYYY-MM-DD" atau null,
+  "no_pesanan": string atau null,
+  "peruntukan": string atau null,
+  "items": [
+    {"nama": string, "qty": number, "satuan": string, "harga_satuan": number}
+  ],
+  "diskon": number,
+  "ongkir": number,
+  "biaya_layanan": number,
+  "total": number
+}
+
+ATURAN PERHITUNGAN:
+1. HARGA SATUAN: Ambil harga beli efektif produk (JANGAN ambil harga coret!).
+   Cek baris "Subtotal Produk", lalu bagikan dengan Qty.
+   Contoh: Subtotal Produk = Rp251.700 dengan Qty = 3, maka harga_satuan = 83900 (BUKAN 115800).
+2. DISKON: Isi dengan total voucher / potongan yang mengurangi Subtotal Produk (misal Voucher Toko + Voucher Shopee).
+   Jangan memasukkan selisih harga coret ke sini karena harga satuan sudah menggunakan harga setelah coret.
+3. ONGKOS KIRIM & DISKON ONGKIR:
+   Jika ada ongkir Rp22.000 dan ada Diskon Pengiriman -Rp22.000 (gratis ongkir), maka ongkir = 0 dan jangan tambahkan potongan ongkir ke diskon.
+   Jika ongkir masih ada sisa bayar (misal ongkir 22rb diskon 10rb), maka ongkir = 12000.
+4. BIAYA LAYANAN: Ambil nominal biaya layanan/admin/jasa aplikasi.
+5. TOTAL: Total akhir pesanan seperti tertulis di nota.
+6. PERUNTUKAN: Periksa nama/alamat pengiriman (misal jika ada G22, G-22, G23, Dapur, Operasional).
+
+PASTIKAN RUMUS: (Subtotal items) - diskon + ongkir + biaya_layanan = total nota.`;
+
+function aiCfg() {
+  try {
+    const raw = localStorage.getItem(AI_KEY);
+    const saved = raw ? JSON.parse(raw) : {};
+    return Object.assign({ apiKey: DEFAULT_GEMINI_KEY, model: 'gemini-3.5-flash-lite' }, saved);
+  } catch (e) {
+    return { apiKey: DEFAULT_GEMINI_KEY, model: 'gemini-3.5-flash-lite' };
+  }
+}
+function aiReady() {
+  const c = aiCfg();
+  return !!(c.apiKey || DEFAULT_GEMINI_KEY);
+}
+function parseNotaJSON(t) {
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('Hasil bacaan AI tidak berbentuk data. Coba foto yang lebih jelas.');
+  return JSON.parse(t.slice(a, b + 1));
+}
+async function readNota(dataUrl) {
+  const c = aiCfg();
+  const apiKey = (c.apiKey || DEFAULT_GEMINI_KEY).trim();
+  const media = (dataUrl.match(/^data:(.*?);/) || [])[1] || 'image/jpeg';
+  const b64 = dataUrl.split(',')[1];
+
+  const payload = {
+    contents: [{
+      parts: [
+        { text: NOTA_PROMPT },
+        { inline_data: { mime_type: media, data: b64 } }
+      ]
+    }],
+    generationConfig: {
+      response_mime_type: 'application/json'
+    }
+  };
+
+  const model = c.model || 'gemini-3.5-flash-lite';
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  let res;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error('Tidak bisa terhubung ke server AI Gemini. Periksa koneksi internet.');
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.error?.message || `HTTP ${res.status}`;
+    throw new Error('Gagal membaca nota: ' + msg);
+  }
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('AI tidak mengembalikan hasil teks.');
+  return parseNotaJSON(text);
+}
+function applyNota(r) {
+  const n = v => (v == null || v === '' || !isFinite(+v)) ? '' : Math.round(+v);
+  if (r.toko) form.toko = String(r.toko);
+  if (r.tanggal && /^\d{4}-\d{2}-\d{2}$/.test(r.tanggal)) form.tanggal = r.tanggal;
+  if (r.no_pesanan) form.noPesanan = String(r.no_pesanan);
+  if (r.platform) {
+    const hit = db.master.platform.find(p => p.toLowerCase() === String(r.platform).toLowerCase());
+    form.platform = hit || String(r.platform);
+  }
+  if (r.peruntukan) {
+    const rawPer = String(r.peruntukan).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const hitPer = db.master.peruntukan.find(p => p.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === rawPer);
+    if (hitPer) form.peruntukan = hitPer;
+  }
+  const items = (Array.isArray(r.items) ? r.items : []).filter(i => i && i.nama).map(i => ({
+    nama: String(i.nama), qty: +i.qty > 0 ? +i.qty : 1, satuan: i.satuan || 'pcs', harga: n(i.harga_satuan)
+  }));
+  if (items.length) form.items = items;
+  form.diskon = n(r.diskon) || ''; form.ongkir = n(r.ongkir) || ''; form.biaya = n(r.biaya_layanan) || '';
+  form.totalNota = n(r.total);
+}
+async function runAI() {
+  if (!form || !form.fotoNota) return;
+  const current = form;
+  form._ai = { state: 'loading' }; renderAI();
+  try {
+    const r = await readNota(form._src || form.fotoNota);
+    if (form !== current || $('#sheetWrap').hidden) return;
+    applyNota(r);
+    form._ai = { state: 'ok', note: r.catatan || '' };
+    openForm(null, form);
+    toast('Nota berhasil dipindai dan data terisi otomatis!');
+  } catch (err) {
+    if (form !== current) return;
+    form._ai = { state: 'err', msg: err.message || 'Gagal membaca nota.' }; renderAI();
+  }
+}
+function renderAI() {
+  const el = $('#aiStatus'); if (!el || !form) return;
+  const a = form._ai;
+  if (!aiReady()) {
+    el.innerHTML = `<p class="ai-hint">Baca nota otomatis belum aktif.</p>`;
+  } else if (!a) {
+    el.innerHTML = form.fotoNota ? `<button class="btn sm primary" type="button" id="aiRun" style="width:100%">⚡ Pindai Nota Otomatis (Gemini AI)</button>` : `<p class="ai-hint">Data nota akan terisi otomatis setelah foto diunggah.</p>`;
+  } else if (a.state === 'loading') {
+    el.innerHTML = `<p class="ai-box" role="status"><i class="spin" aria-hidden="true"></i>Sedang membaca nota dengan Gemini AI…</p>`;
+  } else if (a.state === 'ok') {
+    el.innerHTML = `<div class="ai-box ok" role="status"><b>✓ Berhasil dibaca AI.</b> Periksa barang &amp; total.${a.note ? `<br><span>Catatan: ${esc(a.note)}</span>` : ''}<br><button class="btn sm ghost" type="button" id="aiRun" style="margin-top:4px">Pindai ulang</button></div>`;
+  } else {
+    el.innerHTML = `<div class="ai-box err" role="alert">${esc(a.msg)}<br><button class="btn sm" type="button" id="aiRun" style="margin-top:4px">Coba lagi</button></div>`;
+  }
+  const b = $('#aiRun'); if (b) b.onclick = runAI;
+}
+function aiSettingsHTML() {
+  const c = aiCfg();
+  return `<div class="set-box">
+    <h3>Baca Nota Otomatis (Google Gemini AI)</h3>
+    <p>Fitur ini menggunakan AI Google Gemini untuk membaca foto struk, invoice, dan nota belanjaan secara otomatis.</p>
+    <div class="fields">
+      <label class="field wide"><span>API Key Gemini</span><input id="aiKey" type="password" value="${esc(c.apiKey || '')}" placeholder="AQ.Ab8RN..." autocomplete="off"></label>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:4px">Kunci API sudah terpasang otomatis dari akun Google AI Studio Anda.</p>
+    <button class="btn primary sm" type="button" id="aiSave" style="margin-top:10px">Simpan Kunci API</button>
+  </div>`;
+}
+function bindAISettings() {
+  $('#aiSave').onclick = () => {
+    const key = $('#aiKey').value.trim();
+    if (!key) { toast('Kunci API tidak boleh kosong.', true); return; }
+    try { localStorage.setItem(AI_KEY, JSON.stringify({ apiKey: key })); }
+    catch (e) { toast('Gagal menyimpan di penyimpanan browser.', true); return; }
+    toast('Kunci API Gemini berhasil disimpan!');
+  };
+}
+
+function fillSample() {
+  Object.assign(form, {
+    toko: '', platform: 'Lainnya', peruntukan: 'G22', metode: 'Kartu kredit', akun: 'DBS ****4648',
+    items: [{ nama: 'Shower Head Kotak 12 Inch Hitam', qty: 3, satuan: 'pcs', harga: 83900 }],
+    totalNota: 237365, diskon: '', keterangan: 'Kebutuhan G22'
+  });
+  if (!db.master.peruntukan.includes('G22')) db.master.peruntukan.push('G22');
+  if (!db.master.akun.includes('DBS ****4648')) db.master.akun.push('DBS ****4648');
+  openForm(null, form);
+  toast('Contoh terisi. Total belum cocok: isi diskon sebesar selisihnya untuk melihat validasi.');
+}
+function saveForm() {
+  const errs = [];
+  if (!form.tanggal) errs.push('tanggal pembelian');
+  if (!form.peruntukan) errs.push('peruntukan');
+  if (form.status === 'dibayar' && !(form.akun || '').trim()) errs.push('sumber dana (pembelian ini sudah dibayar)');
+  const items = form.items.filter(it => (it.nama || '').trim() || num(it.harga));
+  if (!items.length) errs.push('minimal satu barang');
+  if (items.some(it => !(it.nama || '').trim())) errs.push('nama untuk setiap barang');
+  if (items.some(it => num(it.qty) <= 0)) errs.push('kuantitas lebih dari 0');
+  if (errs.length) { toast('Lengkapi dulu: ' + errs.join(', ') + '.', true); return; }
+  const rec = Object.assign({}, form, {
+    items: items.map(it => ({ nama: it.nama.trim(), qty: num(it.qty), satuan: (it.satuan || '').trim(), harga: num(it.harga) })),
+    diskon: form.diskon === '' ? '' : num(form.diskon), ongkir: form.ongkir === '' ? '' : num(form.ongkir),
+    biaya: form.biaya === '' ? '' : num(form.biaya), totalNota: form.totalNota === '' ? '' : num(form.totalNota)
+  });
+  delete rec._new; delete rec._ai; delete rec._src;
+  rec.akun = (rec.akun || '').trim();
+  if (rec.status !== 'dibayar') {
+    rec.status = rec.akun ? 'diproses' : 'belum';
+    rec.tglProses = rec.akun ? (rec.tglProses || today()) : '';
+  }
+  if (rec.akun && !db.master.akun.some(a => a.toLowerCase() === rec.akun.toLowerCase())) db.master.akun.push(rec.akun);
+  const isNew = !rec.id || !db.pembelian.some(p => p.id === rec.id);
+  if (isNew) {
+    rec.id = uid(); rec.createdAt = Date.now();
+    rec.tglBayar = ''; rec.buktiBayar = '';
+    db.pembelian.push(rec);
+  } else {
+    const i = db.pembelian.findIndex(p => p.id === rec.id); db.pembelian[i] = rec;
+  }
+  async function doSaveForm() {
+    Store.save(rec);
+    closeSheet(); render(); toast((isNew ? 'Pembelian tersimpan' : 'Perubahan tersimpan') + ', status ' + STATUS[rec.status].label.toLowerCase());
+  }
+  doSaveForm();
+}
+
+/* ---------- Detail ---------- */
+function openDetail(id) {
+  const p = db.pembelian.find(x => x.id === id); if (!p) return;
+  const { sub, total } = calc(p); const d = mismatch(p);
+  const st = p.status;
+  const body = `
+  <div class="d-grid">
+    <div>
+      ${p.fotoNota ? `<img class="thumb" src="${p.fotoNota}" alt="Foto nota" data-zoom>` : '<div class="no-photo">Foto nota belum diunggah</div>'}
+      ${p.buktiBayar ? `<p style="font-size:13px;color:var(--muted);margin:14px 0 6px">Bukti pembayaran</p><img class="thumb" src="${p.buktiBayar}" alt="Bukti pembayaran" data-zoom>` : ''}
+    </div>
+    <div>
+      <ol class="timeline" aria-label="Status">
+        <li class="done"><b>Dicatat</b>${fmtDate(p.tanggal)}</li>
+        <li class="${st !== 'belum' ? 'done' : ''}"><b>Diproses</b>${p.tglProses ? fmtDate(p.tglProses) : 'Menunggu'}</li>
+        <li class="${st === 'dibayar' ? 'done' : ''}"><b>Dibayar</b>${p.tglBayar ? fmtDate(p.tglBayar) : 'Menunggu'}</li>
+      </ol>
+      <dl class="kv">
+        <div><dt>Toko / supplier</dt><dd>${esc(p.toko || '–')}</dd></div>
+        <div><dt>Platform</dt><dd>${esc(p.platform || '–')}</dd></div>
+        <div><dt>No. pesanan</dt><dd>${esc(p.noPesanan || '–')}</dd></div>
+        <div><dt>Peruntukan</dt><dd>${esc(p.peruntukan || '–')}</dd></div>
+        <div><dt>Metode bayar</dt><dd>${esc(p.metode || '–')}</dd></div>
+        <div><dt>Sumber dana</dt><dd>${esc(p.akun || '–')}</dd></div>
+      </dl>
+      <div class="t-wrap"><table class="t">
+        <thead><tr><th>Barang</th><th class="n">Qty</th><th class="n">Harga satuan</th><th class="n">Subtotal</th></tr></thead>
+        <tbody>${p.items.map(it => `<tr><td>${esc(it.nama)}</td><td class="n">${num(it.qty)} ${esc(it.satuan)}</td><td class="n">${rp(it.harga)}</td><td class="n">${rp(num(it.qty) * num(it.harga))}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <div class="totals">
+        <div><span>Subtotal barang</span><span>${rp(sub)}</span></div>
+        ${num(p.diskon) ? `<div><span>Diskon / voucher</span><span>−${rp(p.diskon)}</span></div>` : ''}
+        ${num(p.ongkir) ? `<div><span>Ongkos kirim</span><span>${rp(p.ongkir)}</span></div>` : ''}
+        ${num(p.biaya) ? `<div><span>Biaya layanan</span><span>${rp(p.biaya)}</span></div>` : ''}
+        <div class="grand"><span>Total pesanan</span><span>${rp(total)}</span></div>
+      </div>
+      ${d ? `<p class="warn">Total di nota ${rp(p.totalNota)} berbeda ${rp(Math.abs(d))} dari hasil hitung. Ubah pembelian ini untuk melengkapi diskon atau biaya.</p>` : ''}
+      ${p.keterangan ? `<p style="margin:14px 0 0"><span style="font-size:12.5px;color:var(--muted)">Keterangan</span><br>${esc(p.keterangan)}</p>` : ''}
+      ${st === 'belum' ? `
+      <div class="pay-box">
+        <h3>Isi sumber dana untuk memproses</h3>
+        <div class="add-row"><input id="quickAkun" list="akunList2" placeholder="mis. DBS ****4648" aria-label="Sumber dana" autocomplete="off"><button class="btn primary sm" type="button" id="quickSave">Simpan</button></div>
+        <datalist id="akunList2">${db.master.akun.map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+        <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">Status otomatis berubah menjadi Diproses.</p>
+      </div>` : ''}
+      ${st === 'diproses' ? `
+      <div class="pay-box" id="payBox" hidden>
+        <h3>Catat pembayaran</h3>
+        <div class="fields">
+          <label class="field"><span class="req">Tanggal bayar</span><input type="date" id="payDate" value="${today()}"></label>
+          <label class="field"><span>Bukti bayar (opsional)</span><input type="file" accept="image/*" id="payFile"></label>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn ghost" type="button" id="payCancel">Batal</button><button class="btn primary" type="button" id="paySave">Simpan pembayaran</button></div>
+      </div>` : ''}
+    </div>
+  </div>`;
+  let foot = `<button class="btn ghost danger" type="button" id="dDel">Hapus</button><span style="flex:1"></span><button class="btn" type="button" id="dEdit">Ubah</button>`;
+  if (st === 'diproses') foot += `<button class="btn primary" type="button" id="dPay">Tandai dibayar</button>`;
+  if (st === 'dibayar') foot += `<button class="btn" type="button" id="dUnpay">Batalkan status dibayar</button>`;
+  openSheet((p.toko || p.platform || 'Pembelian') + ', ' + fmtDate(p.tanggal), body, foot);
+  $('#sheetBody').querySelectorAll('[data-zoom]').forEach(im => im.onclick = () => lightbox(im.src));
+
+  const update = (patch, msg) => {
+    Object.assign(p, patch);
+    Store.save(p);
+    render(); openDetail(p.id); toast(msg);
+  };
+  $('#dEdit').onclick = () => openForm(p);
+  $('#dDel').onclick = () => {
+    if (!confirm('Hapus pembelian ini beserta fotonya? Tindakan ini tidak bisa dibatalkan.')) return;
+    db.pembelian = db.pembelian.filter(x => x.id !== p.id);
+    Store.deleteRecord(p.id);
+    closeSheet(); render(); toast('Pembelian dihapus');
+  };
+  if ($('#quickSave')) {
+    const go = () => {
+      const v = $('#quickAkun').value.trim();
+      if (!v) { toast('Isi sumber dana terlebih dahulu.', true); return; }
+      if (!db.master.akun.some(a => a.toLowerCase() === v.toLowerCase())) db.master.akun.push(v);
+      update({ akun: v, status: 'diproses', tglProses: today() }, 'Sumber dana tersimpan, status menjadi Diproses');
+    };
+    $('#quickSave').onclick = go;
+    $('#quickAkun').onkeydown = e => { if (e.key === 'Enter') go(); };
+  }
+  if ($('#dUnpay')) $('#dUnpay').onclick = () => { if (confirm('Batalkan status dibayar? Tanggal bayar dan bukti bayar akan dihapus.')) update({ status: 'diproses', tglBayar: '', buktiBayar: '' }, 'Status dibayar dibatalkan'); };
+  if ($('#dPay')) $('#dPay').onclick = () => { const b = $('#payBox'); b.hidden = false; b.scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#payDate').focus(); };
+  if ($('#payCancel')) $('#payCancel').onclick = () => $('#payBox').hidden = true;
+  if ($('#paySave')) $('#paySave').onclick = async () => {
+    const dt = $('#payDate').value; if (!dt) { toast('Isi tanggal bayar.', true); return; }
+    let bukti = ''; const f = $('#payFile').files[0];
+    if (f) { try { bukti = await compress(f); } catch (e) { toast(e.message, true); return; } }
+    update({ status: 'dibayar', tglBayar: dt, buktiBayar: bukti, tglProses: p.tglProses || dt }, 'Ditandai dibayar');
+  };
+}
+
+/* ---------- Master data ---------- */
+const MASTER_INFO = {
+  peruntukan: ['Peruntukan', 'Cabang, divisi, atau lokasi yang memakai barang. Dipakai untuk rekap per bagian.'],
+  akun: ['Sumber dana', 'Rekening atau kartu kredit yang dipakai membayar. Tulis 4 digit terakhir saja. Sumber dana baru yang diketik di form otomatis masuk ke sini.'],
+  metode: ['Metode bayar', 'Cara pembayaran.'],
+  platform: ['Platform', 'Tempat pembelian.']
+};
+function openMaster() {
+  const draw = () => {
+    $('#sheetBody').innerHTML = Object.keys(MASTER_INFO).map(k => `
+      <section class="master-sec" data-k="${k}">
+        <h3>${MASTER_INFO[k][0]}</h3><p>${MASTER_INFO[k][1]}</p>
+        <div class="chips">${db.master[k].map((v, i) => `<span class="chip">${esc(v)}<button type="button" data-rm="${i}" aria-label="Hapus ${esc(v)}">×</button></span>`).join('') || '<span style="color:var(--muted);font-size:13px">Belum ada isian</span>'}</div>
+        <form class="add-row"><input placeholder="Tambah ${MASTER_INFO[k][0].toLowerCase()}" aria-label="Tambah ${MASTER_INFO[k][0].toLowerCase()}"><button class="btn sm" type="submit">Tambah</button></form>
+      </section>`).join('');
+    $('#sheetBody').querySelectorAll('.master-sec').forEach(sec => {
+      const k = sec.dataset.k;
+      sec.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { db.master[k].splice(+b.dataset.rm, 1); Store.save(); draw(); });
+      sec.querySelector('form').onsubmit = e => {
+        e.preventDefault(); const inp = e.target.querySelector('input'); const v = inp.value.trim();
+        if (!v) return;
+        if (db.master[k].some(x => x.toLowerCase() === v.toLowerCase())) { toast('Isian itu sudah ada.', true); return; }
+        db.master[k].push(v); Store.save(); draw(); sec.isConnected; const again = $(`.master-sec[data-k="${k}"] input`); if (again) again.focus();
+      };
+    });
+  };
+  openSheet('Data master', '', '', true); draw();
+  onSheetClose = () => { renderFilters(); render(); };
+}
+
+/* ---------- Menu: ringkasan WA & export ---------- */
+function summaryText() {
+  const base = filtered(true);
+  const g = s => base.filter(p => p.status === s);
+  const tot = arr => arr.reduce((a, p) => a + calc(p).total, 0);
+  const b = g('belum'), d = g('diproses'), y = g('dibayar');
+  let t = `*Rekap Pembelian* per ${fmtDate(today())}\n`;
+  if (ui.per) t += `Peruntukan: ${ui.per}\n`;
+  if (ui.bulan) t += `Bulan: ${new Date(ui.bulan + '-01T00:00:00').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}\n`;
+  t += `\nBelum diproses: ${b.length} pesanan, ${rp(tot(b))}\nDiproses (belum dibayar): ${d.length} pesanan, ${rp(tot(d))}\nDibayar: ${y.length} pesanan, ${rp(tot(y))}\n\n*Total belum dibayar: ${rp(tot(b) + tot(d))}*`;
+  const open = [...b, ...d];
+  if (open.length) t += '\n\nRincian belum dibayar:\n' + open.slice(0, 15).map((p, i) => `${i + 1}. ${fmtDate(p.tanggal)}, ${(p.items[0] || {}).nama || '-'}${p.items.length > 1 ? ' +' + (p.items.length - 1) : ''} (${p.peruntukan || '-'}), ${rp(calc(p).total)}`).join('\n') + (open.length > 15 ? `\n…dan ${open.length - 15} lainnya` : '');
+  return t;
+}
+function toCSV() {
+  const H = ['Tanggal', 'Toko', 'Platform', 'No Pesanan', 'Peruntukan', 'Nama Barang', 'Qty', 'Satuan', 'Harga Satuan', 'Subtotal', 'Diskon', 'Ongkir', 'Biaya Layanan', 'Total Pesanan', 'Total di Nota', 'Metode', 'Sumber Dana', 'Status', 'Tgl Diproses', 'Tgl Dibayar', 'Keterangan'];
+  const q = v => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const rows = [H];
+  filtered(false).forEach(p => {
+    const { total } = calc(p);
+    p.items.forEach((it, i) => rows.push([p.tanggal, p.toko, p.platform, p.noPesanan, p.peruntukan, it.nama, it.qty, it.satuan, it.harga, num(it.qty) * num(it.harga),
+      i ? '' : num(p.diskon), i ? '' : num(p.ongkir), i ? '' : num(p.biaya), i ? '' : total, i ? '' : p.totalNota, p.metode, p.akun, STATUS[p.status].label, p.tglProses, p.tglBayar, i ? '' : p.keterangan]));
+  });
+  return '\ufeff' + rows.map(r => r.map(q).join(';')).join('\r\n');
+}
+async function saveFile(name, data, mime) {
+  let dl = null;
+  try { dl = window.claude ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+  if (dl) {
+    try { await dl.save({ filename: name, data }); toast('File disimpan'); }
+    catch (e) { if (e && e.code !== 'declined') toast('File tidak bisa disimpan di tampilan ini.', true); }
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: mime })); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('File disimpan');
+}
+function exportCSV() {
+  if (!db.pembelian.length) { toast('Belum ada data untuk diekspor.', true); return; }
+  saveFile(`rekap-pembelian-${today()}.csv`, toCSV(), 'text/csv');
+}
+function exportSQL() {
+  if (!db.pembelian.length && !db.master) { toast('Belum ada data untuk diekspor.', true); return; }
+  const escSql = v => {
+    if (v === null || v === undefined) return 'NULL';
+    if (typeof v === 'number') return isNaN(v) ? '0' : String(v);
+    return "'" + String(v).replace(/'/g, "''") + "'";
+  };
+
+  let sql = `-- Backup Database Rekap Pembelian (SQLite / MySQL Compatible)\n`;
+  sql += `-- Tanggal Ekspor: ${new Date().toLocaleString('id-ID')}\n\n`;
+  sql += `PRAGMA foreign_keys = OFF;\n\n`;
+
+  sql += `-- Struktur & Data Master Config\n`;
+  sql += `CREATE TABLE IF NOT EXISTS master_config (\n  key TEXT PRIMARY KEY,\n  value TEXT NOT NULL\n);\n`;
+  if (db.master) {
+    for (const [k, v] of Object.entries(db.master)) {
+      sql += `INSERT OR REPLACE INTO master_config (key, value) VALUES (${escSql(k)}, ${escSql(JSON.stringify(v))});\n`;
+    }
+  }
+  sql += `\n`;
+
+  sql += `-- Struktur & Data Pembelian\n`;
+  sql += `CREATE TABLE IF NOT EXISTS pembelian (\n`;
+  sql += `  id TEXT PRIMARY KEY,\n  tanggal TEXT,\n  toko TEXT,\n  platform TEXT,\n  noPesanan TEXT,\n  peruntukan TEXT,\n`;
+  sql += `  diskon REAL DEFAULT 0,\n  ongkir REAL DEFAULT 0,\n  biaya REAL DEFAULT 0,\n  totalNota REAL,\n`;
+  sql += `  metode TEXT,\n  akun TEXT,\n  status TEXT,\n  tglProses TEXT,\n  tglBayar TEXT,\n  keterangan TEXT,\n`;
+  sql += `  fotoNota TEXT,\n  buktiBayar TEXT,\n  createdAt INTEGER\n);\n`;
+
+  sql += `CREATE TABLE IF NOT EXISTS pembelian_items (\n`;
+  sql += `  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  pembelian_id TEXT NOT NULL,\n  nama TEXT,\n  qty REAL DEFAULT 1,\n`;
+  sql += `  satuan TEXT,\n  harga REAL DEFAULT 0,\n  urutan INTEGER DEFAULT 0,\n`;
+  sql += `  FOREIGN KEY(pembelian_id) REFERENCES pembelian(id) ON DELETE CASCADE\n);\n\n`;
+
+  if (Array.isArray(db.pembelian)) {
+    db.pembelian.forEach(p => {
+      sql += `INSERT OR REPLACE INTO pembelian (id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota, metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt) VALUES (\n`;
+      sql += `  ${escSql(p.id)}, ${escSql(p.tanggal)}, ${escSql(p.toko)}, ${escSql(p.platform)}, ${escSql(p.noPesanan)}, ${escSql(p.peruntukan)},\n`;
+      sql += `  ${Number(p.diskon) || 0}, ${Number(p.ongkir) || 0}, ${Number(p.biaya) || 0}, ${p.totalNota !== null && p.totalNota !== undefined && p.totalNota !== '' ? Number(p.totalNota) : 'NULL'},\n`;
+      sql += `  ${escSql(p.metode)}, ${escSql(p.akun)}, ${escSql(p.status)}, ${escSql(p.tglProses)}, ${escSql(p.tglBayar)}, ${escSql(p.keterangan)},\n`;
+      sql += `  ${escSql(p.fotoNota)}, ${escSql(p.buktiBayar)}, ${Number(p.createdAt) || Date.now()}\n);\n`;
+
+      if (Array.isArray(p.items)) {
+        p.items.forEach((it, idx) => {
+          sql += `INSERT INTO pembelian_items (pembelian_id, nama, qty, satuan, harga, urutan) VALUES (\n`;
+          sql += `  ${escSql(p.id)}, ${escSql(it.nama)}, ${Number(it.qty) || 1}, ${escSql(it.satuan || '')}, ${Number(it.harga) || 0}, ${idx}\n);\n`;
+        });
+      }
+    });
+  }
+
+  sql += `\nPRAGMA foreign_keys = ON;\n`;
+  saveFile(`backup-database-${today()}.sql`, sql, 'application/sql');
+}
+function openMenu() {
+  const txt = summaryText();
+  openSheet('Ringkasan dan ekspor', `
+    <p style="margin:0 0 8px;color:var(--muted);font-size:13.5px">Ringkasan mengikuti filter peruntukan dan bulan yang sedang aktif. Salin lalu tempel di WhatsApp.</p>
+    <textarea id="waText" readonly style="width:100%;min-height:240px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--surface-2);font-size:13.5px;resize:vertical">${esc(txt)}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn primary" type="button" id="copyWA">Salin ringkasan</button><button class="btn" type="button" id="expCSV">Ekspor CSV untuk Excel</button><button class="btn ghost" type="button" id="btnTutorialMenu">💡 Panduan Aplikasi</button><button class="btn ghost" type="button" id="openMaster2">Data master</button></div>
+    <h3 style="margin:22px 0 4px;font-size:14.5px">Cadangan data</h3>
+    <p style="margin:0 0 8px;color:var(--muted);font-size:13px">Simpan semua data (termasuk foto) ke satu file, lalu pulihkan di perangkat lain atau setelah ganti HP.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="bak">Cadangkan data (.JSON)</button><button class="btn primary" type="button" id="expSQL">💾 Ekspor SQL (.sql)</button><label class="btn">Pulihkan data<input type="file" accept=".json,application/json" hidden id="restore"></label></div>
+    <p style="margin:18px 0 0;color:var(--muted);font-size:12.5px">${Store.isServer ? `Data tersimpan di database server (${db.pembelian.length} pesanan) dan sama di semua perangkat yang membuka alamat ini.` : `Data tersimpan di perangkat ini saja (${db.pembelian.length} pesanan) karena aplikasi tidak terhubung ke server.`}</p>
+    ${aiSettingsHTML()}`, '', true);
+  bindAISettings();
+  $('#copyWA').onclick = async () => {
+    const ta = $('#waText');
+    try { await navigator.clipboard.writeText(ta.value); toast('Ringkasan disalin'); }
+    catch (e) { ta.focus(); ta.select(); try { document.execCommand('copy'); toast('Ringkasan disalin'); } catch (_) { toast('Pilih teks lalu salin secara manual.', true); } }
+  };
+  $('#expCSV').onclick = exportCSV;
+  $('#expSQL').onclick = exportSQL;
+  $('#bak').onclick = () => saveFile(`cadangan-rekap-pembelian-${today()}.json`, JSON.stringify(db), 'application/json');
+  $('#restore').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!Array.isArray(d.pembelian) || !d.master) throw new Error('bad');
+      if (!confirm(`Ganti semua data di perangkat ini dengan ${d.pembelian.length} pesanan dari file cadangan?`)) return;
+      db = { pembelian: d.pembelian, master: Object.assign(clone(DEFAULT_MASTER), d.master), mig: 2 };
+      await Store.syncAll(db);
+      closeSheet(); renderFilters(); render(); toast('Data dipulihkan');
+    } catch (_) { toast('File ini bukan cadangan Rekap Pembelian yang valid.', true); }
+  };
+  $('#openMaster2').onclick = () => { closeSheet(); openMaster(); };
+}
+
+/* ---------- Events ---------- */
+$('#btnTutorial').onclick = startTutorial;
+const mTut = $('#btnTutorialMenu');
+if (mTut) mTut.onclick = () => { closeSheet(); startTutorial(); };
+$('#btnAdd').onclick = () => openForm(null);
+$('#btnMaster').onclick = openMaster;
+$('#btnMenu').onclick = openMenu;
+$('#sheetClose').onclick = closeSheet;
+$('#sheetWrap').addEventListener('click', e => {
+  if (e.target.id === 'sheetWrap') closeSheet();
+  if (e.target.closest('[data-act="close"]')) closeSheet();
+});
+$('#lightbox').onclick = () => $('#lightbox').hidden = true;
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('#lightbox').hidden) $('#lightbox').hidden = true; else if (!$('#sheetWrap').hidden) closeSheet();
+});
+$('#steps').addEventListener('click', e => {
+  const b = e.target.closest('.step'); if (!b) return;
+  ui.status = ui.status === b.dataset.s ? '' : b.dataset.s; render();
+});
+$('#list').addEventListener('click', e => {
+  const r = e.target.closest('[data-id]'); if (r) return openDetail(r.dataset.id);
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  if (a.dataset.act === 'add') openForm(null);
+  if (a.dataset.act === 'reset') resetFilters();
+});
+$('#fQ').addEventListener('input', e => { ui.q = e.target.value; render(); });
+$('#fPer').addEventListener('change', e => { ui.per = e.target.value; render(); });
+$('#fBulan').addEventListener('change', e => { ui.bulan = e.target.value; render(); });
+function resetFilters() { Object.assign(ui, { status: '', q: '', per: '', bulan: '' }); $('#fQ').value = ''; $('#fBulan').value = ''; renderFilters(); render(); }
+$('#fReset').onclick = resetFilters;
+
+/* ---------- PWA: pasang aplikasi & mode offline ---------- */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#btnInstall').hidden = false; });
+$('#btnInstall').onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#btnInstall').hidden = true;
+};
+window.addEventListener('appinstalled', () => { $('#btnInstall').hidden = true; toast('Aplikasi terpasang'); });
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+(async () => {
+  await Store.init();
+  renderFilters();
+  render();
+
+  // Jalankan tutorial otomatis satu kali untuk pengguna baru pertama kali buka
+  if (!localStorage.getItem('tutorial_seen')) {
+    localStorage.setItem('tutorial_seen', 'true');
+    setTimeout(startTutorial, 700);
+  }
+})();
+})();
+</script>
+</body>
+</html>
