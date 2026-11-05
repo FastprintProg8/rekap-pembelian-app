@@ -303,6 +303,7 @@ const server = http.createServer((req, res) => {
     return sendJSON({
       pembelian: getAllPembelian(),
       master: getMasterData(),
+      ai_config: (() => { try { const r = getMasterRow.get('ai_config'); return r ? JSON.parse(r.value) : null; } catch(e){ return null; } })(),
       mig: 2,
       sqlite: true,
       ai: !!ANTHROPIC_API_KEY
@@ -330,6 +331,14 @@ const server = http.createServer((req, res) => {
     const id = decodeURIComponent(pathname.replace('/api/pembelian/', ''));
     deletePembelianRecord(id);
     return sendJSON({ success: true });
+  }
+
+  if (pathname === '/api/ai-config' && req.method === 'POST') {
+    getBody().then(cfg => {
+      setMasterRow.run('ai_config', JSON.stringify(cfg));
+      sendJSON({ success: true });
+    }).catch(err => sendJSON({ error: err.message }, 400));
+    return;
   }
 
   if (pathname === '/api/master' && req.method === 'POST') {

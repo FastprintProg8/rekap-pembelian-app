@@ -501,6 +501,9 @@ const Store = {
         this.ai = !!d.ai;
         db.pembelian = Array.isArray(d.pembelian) ? d.pembelian : [];
         db.master = Object.assign(clone(DEFAULT_MASTER), d.master || {});
+        if (d.ai_config && d.ai_config.apiKey) {
+          try { localStorage.setItem(AI_KEY, JSON.stringify(d.ai_config)); } catch(e){}
+        }
         // Jika di localStorage ada data lama tapi di server masih kosong, tawarkan/migrasikan
         const localRaw = localStorage.getItem(KEY);
         if (localRaw && db.pembelian.length === 0) {
@@ -1037,6 +1040,13 @@ function bindAISettings() {
     if (!key) { toast('Kunci API tidak boleh kosong.', true); return; }
     try { localStorage.setItem(AI_KEY, JSON.stringify({ apiKey: key })); }
     catch (e) { toast('Gagal menyimpan di penyimpanan browser.', true); return; }
+    if (Store.isServer) {
+      fetch('api/ai-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: key })
+      }).catch(() => {});
+    }
     toast('Kunci API Gemini berhasil disimpan!');
   };
 }

@@ -212,10 +212,15 @@ if ($uri === '/api/state' && $method === 'GET') {
     $stM->execute();
     $masterRaw = $stM->fetchColumn();
     $master = json_decode($masterRaw, true) ?: [];
+    $stAI = $pdo->prepare("SELECT value FROM master_config WHERE `key` = 'ai_config'");
+    $stAI->execute();
+    $aiRaw = $stAI->fetchColumn();
+    $aiConfig = $aiRaw ? json_decode($aiRaw, true) : null;
 
     jsonResponse([
         'pembelian' => $pembelian,
         'master' => $master,
+        'ai_config' => $aiConfig,
         'mig' => 2,
         'driver' => $dbDriver,
         'ai' => envValue('ANTHROPIC_API_KEY') !== ''
@@ -305,6 +310,18 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
     }
 
     jsonResponse(['success' => true, 'id' => $p['id']]);
+}
+
+// POST /api/ai-config
+if ($uri === '/api/ai-config' && $method === 'POST') {
+    $payload = getPayload();
+    if ($dbDriver === 'mysql') {
+        $stmt = $pdo->prepare("INSERT INTO master_config (`key`, `value`) VALUES ('ai_config', :val) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)");
+    } else {
+        $stmt = $pdo->prepare("INSERT OR REPLACE INTO master_config (`key`, `value`) VALUES ('ai_config', :val)");
+    }
+    $stmt->execute([':val' => json_encode($payload)]);
+    jsonResponse(['success' => true]);
 }
 
 // 3. POST /api/master
