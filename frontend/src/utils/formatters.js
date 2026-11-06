@@ -29,3 +29,20 @@ export function hitungTotalHitungan(items = [], diskon = 0, ongkir = 0, biaya = 
 export function generateId() {
   return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
 }
+
+/**
+ * Normalisasi URL foto (Base64 atau Path fisik di storage)
+ * Mendukung subfolder deployment otomatis.
+ */
+export function resolveImageUrl(src) {
+  if (!src) return '';
+  // Jika sudah base64 atau absolute http(s) URL
+  if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+    return src;
+  }
+  
+  // Jika path /storage/... atau storage/...
+  const cleanPath = src.startsWith('/') ? src : `/${src}`;
+  const basePath = window.location.pathname.replace(/\/+$/, '');
+  return `${basePath}${cleanPath}`;
+}

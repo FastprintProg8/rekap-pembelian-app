@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { formatRupiah, formatTanggal } from '../utils/formatters';
-import { Edit2, Trash2, Image as ImageIcon, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatRupiah, formatTanggal, resolveImageUrl } from '../utils/formatters';
+import { Edit2, Trash2, Image as ImageIcon, FileCheck, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import ImagePreviewModal from './ImagePreviewModal';
 
 const ITEMS_PER_PAGE = 20;
 
 export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPay }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewImage, setPreviewImage] = useState(null); // { src, title }
 
   // Reset ke halaman 1 jika filter / data berubah
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
               <th className="py-3 px-4">Item Barang</th>
               <th className="py-3 px-4 text-right">Total Nota</th>
               <th className="py-3 px-4">Status & Pembayaran</th>
-              <th className="py-3 px-4 text-center">Nota</th>
+              <th className="py-3 px-4 text-center">Nota & Bukti</th>
               <th className="py-3 px-4 text-right">Aksi</th>
             </tr>
           </thead>
@@ -122,21 +124,41 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
                     </div>
                   </td>
 
-                  {/* Foto Nota */}
+                  {/* Foto Nota & Bukti Bayar */}
                   <td className="py-3.5 px-4 text-center">
-                    {item.fotoNota ? (
-                      <a
-                        href={item.fotoNota}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition"
-                        title="Lihat foto nota"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                      </a>
-                    ) : (
-                      <span className="text-slate-300">-</span>
-                    )}
+                    <div className="inline-flex items-center gap-1.5">
+                      {item.fotoNota ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage({ 
+                            src: item.fotoNota, 
+                            title: `Nota: ${item.toko || 'Toko'} (${formatTanggal(item.tanggal)})` 
+                          })}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition cursor-pointer"
+                          title="Lihat Foto Nota"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                      ) : null}
+
+                      {item.buktiBayar ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage({ 
+                            src: item.buktiBayar, 
+                            title: `Bukti Bayar: ${item.toko || 'Toko'} (${item.akun || 'Akun'})` 
+                          })}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                          title="Lihat Bukti Bayar / Transfer"
+                        >
+                          <FileCheck className="w-4 h-4" />
+                        </button>
+                      ) : null}
+
+                      {!item.fotoNota && !item.buktiBayar && (
+                        <span className="text-slate-300">-</span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Aksi */}
@@ -197,6 +219,14 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
           </div>
         )}
       </div>
+
+      {/* Modal Preview Foto / Bukti */}
+      <ImagePreviewModal
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        src={previewImage?.src}
+        title={previewImage?.title}
+      />
     </div>
   );
 }
