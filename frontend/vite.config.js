@@ -5,6 +5,7 @@ import path from 'node:path';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react(), tailwindcss()],
   build: {
     outDir: path.resolve(__dirname, '../dist'),

@@ -1,6 +1,11 @@
 const LS_KEY = 'rekap-pembelian:v2';
 const AI_LS_KEY = 'rekap-pembelian:ai';
 
+const getApiBase = () => {
+  const path = window.location.pathname.replace(/\/+$/, '');
+  return `${path}/api`;
+};
+
 export const DEFAULT_MASTER = {
   peruntukan: ['G22', 'G23'],
   akun: ['DBS ****4648', 'BCA Operasional', 'Kas Kecil'],
@@ -17,7 +22,7 @@ export const api = {
     } catch (e) {}
 
     try {
-      const res = await fetch('/api/state');
+      const res = await fetch(`${getApiBase()}/state`);
       if (res.ok) {
         const data = await res.json();
         const serverAiKey = data.ai_config?.apiKey || '';
@@ -56,7 +61,7 @@ export const api = {
     } catch (e) {}
 
     try {
-      await fetch('/api/ai-config', {
+      await fetch(`${getApiBase()}/ai-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey })
@@ -67,7 +72,7 @@ export const api = {
   async restoreBackup(backupData) {
     this.saveToLocal(backupData.pembelian || [], backupData.master || DEFAULT_MASTER);
     try {
-      await fetch('/api/sync-all', {
+      await fetch(`${getApiBase()}/sync-all`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(backupData)
@@ -79,7 +84,7 @@ export const api = {
 
   async savePembelian(item) {
     try {
-      const res = await fetch('/api/pembelian', {
+      const res = await fetch(`${getApiBase()}/pembelian`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item)
@@ -95,7 +100,7 @@ export const api = {
 
   async deletePembelian(id) {
     try {
-      const res = await fetch(`/api/pembelian/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${getApiBase()}/pembelian/${id}`, { method: 'DELETE' });
       if (res.ok) return true;
     } catch (e) {}
     return false;
@@ -103,7 +108,7 @@ export const api = {
 
   async saveMaster(masterData) {
     try {
-      await fetch('/api/master', {
+      await fetch(`${getApiBase()}/master`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(masterData)
