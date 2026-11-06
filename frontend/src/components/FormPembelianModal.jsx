@@ -344,7 +344,8 @@ export default function FormPembelianModal({
                   />
                   <input
                     type="number"
-                    min="1"
+                    step="any"
+                    min="0"
                     placeholder="Qty"
                     value={it.qty}
                     onChange={e => handleItemChange(idx, 'qty', e.target.value)}
