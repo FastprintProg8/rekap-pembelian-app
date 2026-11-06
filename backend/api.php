@@ -1,15 +1,27 @@
 <?php
+// Helper: Cari root folder aplikasi tempat folder 'storage' berada
+function getAppRootDir() {
+    if (is_dir(__DIR__ . '/storage')) {
+        return __DIR__;
+    }
+    if (is_dir(dirname(__DIR__) . '/storage')) {
+        return dirname(__DIR__);
+    }
+    return __DIR__;
+}
+
 // Helper: Simpan base64 ke file fisik di storage/uploads
 function saveBase64ToStorage($dataUrl, $prefix = 'nota') {
     if (empty($dataUrl) || !is_string($dataUrl)) return $dataUrl;
-    if (strpos($dataUrl, '/storage/') === 0 || strpos($dataUrl, 'data:image/') !== 0) {
+    if (strpos($dataUrl, '/storage/') === 0 || strpos($dataUrl, 'storage/') === 0 || strpos($dataUrl, 'data:image/') !== 0) {
         return $dataUrl;
     }
     if (preg_match('/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/', $dataUrl, $m)) {
         $ext = strtolower(str_replace('jpeg', 'jpg', $m[1]));
         $bin = base64_decode($m[2]);
         if ($bin !== false) {
-            $storageDir = dirname(__DIR__) . '/storage/uploads';
+            $rootDir = getAppRootDir();
+            $storageDir = $rootDir . '/storage/uploads';
             if (!is_dir($storageDir)) {
                 @mkdir($storageDir, 0777, true);
             }

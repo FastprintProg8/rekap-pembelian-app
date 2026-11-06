@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Sparkles, Upload, AlertTriangle, Check, Camera } from 'lucide-react';
-import { formatRupiah, hitungTotalHitungan, generateId } from '../utils/formatters';
+import { formatRupiah, hitungTotalHitungan, generateId, resolveImageUrl } from '../utils/formatters';
 import { api } from '../services/api';
 
 const DRAFT_KEY = 'rekap-pembelian:form-draft';
@@ -275,7 +275,7 @@ export default function FormPembelianModal({
 
               {formData.fotoNota && (
                 <div className="relative group w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                  <img src={formData.fotoNota} alt="Preview Nota" className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(formData.fotoNota)} alt="Preview Nota" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, fotoNota: '' }))}
