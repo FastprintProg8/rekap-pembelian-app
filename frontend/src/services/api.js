@@ -27,8 +27,21 @@ export const api = {
         const data = await res.json();
         const serverAiKey = data.ai_config?.apiKey || '';
         const finalAiKey = serverAiKey || localAiKey;
+        const normalizedPembelian = (data.pembelian || []).map(p => ({
+          ...p,
+          items: (p.items || []).map(it => {
+            const hrg = Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0);
+            return {
+              ...it,
+              qty: Number(it.qty) || 1,
+              hargaSatuan: hrg,
+              harga: hrg
+            };
+          })
+        }));
+
         return {
-          pembelian: data.pembelian || [],
+          pembelian: normalizedPembelian,
           master: data.master || DEFAULT_MASTER,
           aiActive: !!(data.ai || finalAiKey),
           aiApiKey: finalAiKey,

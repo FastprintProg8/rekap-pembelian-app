@@ -37,13 +37,21 @@ export default function FormPembelianModal({
 
   useEffect(() => {
     if (initialData) {
+      const normalizedItems = (initialData.items || []).map((it, idx) => ({
+        id: it.id || String(idx + 1),
+        nama: it.nama || '',
+        qty: Number(it.qty) || 1,
+        satuan: it.satuan || 'pcs',
+        hargaSatuan: Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0)
+      }));
+
       setFormData({
         ...initialData,
         diskon: initialData.diskon || 0,
         ongkir: initialData.ongkir || 0,
         biaya: initialData.biaya || 0,
         totalNota: initialData.totalNota !== null ? initialData.totalNota : '',
-        items: initialData.items?.length > 0 ? initialData.items : [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
+        items: normalizedItems.length > 0 ? normalizedItems : [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
       });
     } else {
       setFormData({
@@ -164,11 +172,15 @@ export default function FormPembelianModal({
       diskon: Number(formData.diskon) || 0,
       ongkir: Number(formData.ongkir) || 0,
       biaya: Number(formData.biaya) || 0,
-      items: formData.items.map(it => ({
-        ...it,
-        qty: Number(it.qty) || 1,
-        hargaSatuan: Number(it.hargaSatuan) || 0
-      }))
+      items: formData.items.map(it => {
+        const hrg = Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0);
+        return {
+          ...it,
+          qty: Number(it.qty) || 1,
+          hargaSatuan: hrg,
+          harga: hrg // kompatibilitas dengan backend SQLite/MySQL
+        };
+      })
     });
   };
 
