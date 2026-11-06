@@ -140,11 +140,19 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item)
       });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `Server mengembalikan status HTTP ${res.status}`);
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        // Jika server mengembalikan HTML error (misal PHP fatal error / warning)
+        const cleanMsg = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+        throw new Error(cleanMsg.slice(0, 180) || `Server tidak mengembalikan JSON (HTTP ${res.status})`);
       }
-      return await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `Server mengembalikan status HTTP ${res.status}`);
+      }
+      return data;
     } catch (e) {
       console.error('Gagal simpan pembelian ke server:', e);
       throw e;

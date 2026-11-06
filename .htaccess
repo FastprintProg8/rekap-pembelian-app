@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Arahkan request api/* (baik di root maupun di subfolder) ke api.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ api.php [QSA,L]
+
+# File index.html default
+DirectoryIndex index.html
+
+# Lindungi database, kunci API (.env), dan file server dari diunduh lewat browser
+<FilesMatch "(^\.|\.(db|db-wal|db-shm|sqlite|sh|md|yml|yaml|bat)$|^(server\.js|package\.json|Dockerfile)$)">
+  Require all denied
+</FilesMatch>

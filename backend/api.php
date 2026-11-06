@@ -370,84 +370,97 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
     $p = getPayload();
     if (empty($p['id'])) jsonResponse(['error' => 'Missing ID'], 400);
 
-    if ($dbDriver === 'mysql') {
-        $sql = "
-            INSERT INTO pembelian (
-              id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
-              metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
-            ) VALUES (
-              :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
-              :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
-            )
-            ON DUPLICATE KEY UPDATE
-              tanggal=VALUES(tanggal), toko=VALUES(toko), platform=VALUES(platform),
-              noPesanan=VALUES(noPesanan), peruntukan=VALUES(peruntukan), diskon=VALUES(diskon),
-              ongkir=VALUES(ongkir), biaya=VALUES(biaya), totalNota=VALUES(totalNota),
-              metode=VALUES(metode), akun=VALUES(akun), status=VALUES(status),
-              tglProses=VALUES(tglProses), tglBayar=VALUES(tglBayar), keterangan=VALUES(keterangan),
-              fotoNota=VALUES(fotoNota), buktiBayar=VALUES(buktiBayar), createdAt=VALUES(createdAt)
-        ";
-    } else {
-        $sql = "
-            INSERT INTO pembelian (
-              id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
-              metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
-            ) VALUES (
-              :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
-              :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
-            )
-            ON CONFLICT(id) DO UPDATE SET
-              tanggal=excluded.tanggal, toko=excluded.toko, platform=excluded.platform,
-              noPesanan=excluded.noPesanan, peruntukan=excluded.peruntukan, diskon=excluded.diskon,
-              ongkir=excluded.ongkir, biaya=excluded.biaya, totalNota=excluded.totalNota,
-              metode=excluded.metode, akun=excluded.akun, status=excluded.status,
-              tglProses=excluded.tglProses, tglBayar=excluded.tglBayar, keterangan=excluded.keterangan,
-              fotoNota=excluded.fotoNota, buktiBayar=excluded.buktiBayar, createdAt=excluded.createdAt
-        ";
-    }
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        ':id' => $p['id'],
-        ':tanggal' => arrGet($p, 'tanggal', ''),
-        ':toko' => arrGet($p, 'toko', ''),
-        ':platform' => arrGet($p, 'platform', ''),
-        ':noPesanan' => arrGet($p, 'noPesanan', ''),
-        ':peruntukan' => arrGet($p, 'peruntukan', ''),
-        ':diskon' => floatval(arrGet($p, 'diskon', 0)),
-        ':ongkir' => floatval(arrGet($p, 'ongkir', 0)),
-        ':biaya' => floatval(arrGet($p, 'biaya', 0)),
-        ':totalNota' => (isset($p['totalNota']) && $p['totalNota'] !== '') ? floatval($p['totalNota']) : null,
-        ':metode' => arrGet($p, 'metode', ''),
-        ':akun' => arrGet($p, 'akun', ''),
-        ':status' => arrGet($p, 'status', 'belum'),
-        ':tglProses' => arrGet($p, 'tglProses', ''),
-        ':tglBayar' => arrGet($p, 'tglBayar', ''),
-        ':keterangan' => arrGet($p, 'keterangan', ''),
-        ':fotoNota' => saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota'),
-        ':buktiBayar' => saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti'),
-        ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
-    ]);
-
-    // Items
-    $del = $pdo->prepare("DELETE FROM pembelian_items WHERE pembelian_id = :id");
-    $del->execute([':id' => $p['id']]);
-
-    if (!empty($p['items']) && is_array($p['items'])) {
-        $insItem = $pdo->prepare("INSERT INTO pembelian_items (pembelian_id, nama, qty, satuan, harga, urutan) VALUES (:pid, :nama, :qty, :satuan, :harga, :urutan)");
-        foreach ($p['items'] as $idx => $it) {
-            $insItem->execute([
-                ':pid' => $p['id'],
-                ':nama' => arrGet($it, 'nama', ''),
-                ':qty' => floatval(arrGet($it, 'qty', 1)),
-                ':satuan' => arrGet($it, 'satuan', ''),
-                ':harga' => floatval(arrGet($it, 'harga', 0)),
-                ':urutan' => $idx
-            ]);
+    try {
+        if ($dbDriver === 'mysql') {
+            $sql = "
+                INSERT INTO pembelian (
+                  id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
+                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
+                ) VALUES (
+                  :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
+                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
+                )
+                ON DUPLICATE KEY UPDATE
+                  tanggal=VALUES(tanggal), toko=VALUES(toko), platform=VALUES(platform),
+                  noPesanan=VALUES(noPesanan), peruntukan=VALUES(peruntukan), diskon=VALUES(diskon),
+                  ongkir=VALUES(ongkir), biaya=VALUES(biaya), totalNota=VALUES(totalNota),
+                  metode=VALUES(metode), akun=VALUES(akun), status=VALUES(status),
+                  tglProses=VALUES(tglProses), tglBayar=VALUES(tglBayar), keterangan=VALUES(keterangan),
+                  fotoNota=VALUES(fotoNota), buktiBayar=VALUES(buktiBayar), createdAt=VALUES(createdAt)
+            ";
+        } else {
+            $sql = "
+                INSERT INTO pembelian (
+                  id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
+                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
+                ) VALUES (
+                  :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
+                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
+                )
+                ON CONFLICT(id) DO UPDATE SET
+                  tanggal=excluded.tanggal, toko=excluded.toko, platform=excluded.platform,
+                  noPesanan=excluded.noPesanan, peruntukan=excluded.peruntukan, diskon=excluded.diskon,
+                  ongkir=excluded.ongkir, biaya=excluded.biaya, totalNota=excluded.totalNota,
+                  metode=excluded.metode, akun=excluded.akun, status=excluded.status,
+                  tglProses=excluded.tglProses, tglBayar=excluded.tglBayar, keterangan=excluded.keterangan,
+                  fotoNota=excluded.fotoNota, buktiBayar=excluded.buktiBayar, createdAt=excluded.createdAt
+            ";
         }
-    }
 
-    jsonResponse(['success' => true, 'id' => $p['id'], 'fotoNota' => saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota'), 'buktiBayar' => saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti')]);
+        $savedFotoNota = saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota');
+        $savedBuktiBayar = saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti');
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':id' => $p['id'],
+            ':tanggal' => arrGet($p, 'tanggal', ''),
+            ':toko' => arrGet($p, 'toko', ''),
+            ':platform' => arrGet($p, 'platform', ''),
+            ':noPesanan' => arrGet($p, 'noPesanan', ''),
+            ':peruntukan' => arrGet($p, 'peruntukan', ''),
+            ':diskon' => floatval(arrGet($p, 'diskon', 0)),
+            ':ongkir' => floatval(arrGet($p, 'ongkir', 0)),
+            ':biaya' => floatval(arrGet($p, 'biaya', 0)),
+            ':totalNota' => (isset($p['totalNota']) && $p['totalNota'] !== '') ? floatval($p['totalNota']) : null,
+            ':metode' => arrGet($p, 'metode', ''),
+            ':akun' => arrGet($p, 'akun', ''),
+            ':status' => arrGet($p, 'status', 'belum'),
+            ':tglProses' => arrGet($p, 'tglProses', ''),
+            ':tglBayar' => arrGet($p, 'tglBayar', ''),
+            ':keterangan' => arrGet($p, 'keterangan', ''),
+            ':fotoNota' => $savedFotoNota,
+            ':buktiBayar' => $savedBuktiBayar,
+            ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
+        ]);
+
+        // Items
+        $del = $pdo->prepare("DELETE FROM pembelian_items WHERE pembelian_id = :id");
+        $del->execute([':id' => $p['id']]);
+
+        if (!empty($p['items']) && is_array($p['items'])) {
+            $insItem = $pdo->prepare("INSERT INTO pembelian_items (pembelian_id, nama, qty, satuan, harga, urutan) VALUES (:pid, :nama, :qty, :satuan, :harga, :urutan)");
+            foreach ($p['items'] as $idx => $it) {
+                $hrg = isset($it['hargaSatuan']) ? $it['hargaSatuan'] : (isset($it['harga']) ? $it['harga'] : (isset($it['harga_satuan']) ? $it['harga_satuan'] : 0));
+                $insItem->execute([
+                    ':pid' => $p['id'],
+                    ':nama' => arrGet($it, 'nama', ''),
+                    ':qty' => floatval(arrGet($it, 'qty', 1)),
+                    ':satuan' => arrGet($it, 'satuan', ''),
+                    ':harga' => floatval($hrg),
+                    ':urutan' => $idx
+                ]);
+            }
+        }
+
+        jsonResponse([
+            'success' => true,
+            'id' => $p['id'],
+            'fotoNota' => $savedFotoNota,
+            'buktiBayar' => $savedBuktiBayar
+        ]);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Database error: ' . $e->getMessage()], 500);
+    }
 }
 
 // POST /api/ai-config
