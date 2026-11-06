@@ -40,3 +40,4 @@ if (fs.existsSync(backendApi)) {
 }
 
 console.log('Berhasil! File root (index.html, assets, api.php) sudah otomatis diperbarui.');
+
