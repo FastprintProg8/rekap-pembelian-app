@@ -43,6 +43,13 @@ export function resolveImageUrl(src) {
   
   // Jika path /storage/... atau storage/...
   const cleanPath = src.startsWith('/') ? src : `/${src}`;
-  const basePath = window.location.pathname.replace(/\/+$/, '');
+
+  // Ambil base path folder aplikasi (buang index.html, index.php, dsb jika ada di URL browser)
+  let basePath = window.location.pathname;
+  if (/\.[a-zA-Z0-9]+$/.test(basePath)) {
+    basePath = basePath.substring(0, basePath.lastIndexOf('/'));
+  }
+  basePath = basePath.replace(/\/+$/, '');
+
   return `${basePath}${cleanPath}`;
 }
