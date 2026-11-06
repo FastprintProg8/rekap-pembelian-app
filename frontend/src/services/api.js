@@ -140,21 +140,29 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item)
       });
-      if (res.ok) {
-        return await res.json();
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server mengembalikan status HTTP ${res.status}`);
       }
+      return await res.json();
     } catch (e) {
-      console.warn('Simpan ke server gagal, menyimpan ke offline storage');
+      console.error('Gagal simpan pembelian ke server:', e);
+      throw e;
     }
-    return { ok: true, offline: true };
   },
 
   async deletePembelian(id) {
     try {
       const res = await fetch(`${getApiBase()}/pembelian/${id}`, { method: 'DELETE' });
-      if (res.ok) return true;
-    } catch (e) {}
-    return false;
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `Gagal menghapus data (HTTP ${res.status})`);
+      }
+      return true;
+    } catch (e) {
+      console.error('Gagal menghapus data dari server:', e);
+      throw e;
+    }
   },
 
   async saveMaster(masterData) {

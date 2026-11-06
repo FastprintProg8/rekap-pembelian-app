@@ -112,23 +112,46 @@ export default function App() {
 
   // Save Item
   const handleSaveItem = async (itemData) => {
-    const existingIndex = pembelian.findIndex(p => p.id === itemData.id);
-    let updatedList;
-    if (existingIndex >= 0) {
-      updatedList = [...pembelian];
-      updatedList[existingIndex] = itemData;
-    } else {
-      updatedList = [itemData, ...pembelian];
-    }
+    try {
+      // 1. Simpan ke database / server terlebih dahulu
+      await api.savePembelian(itemData);
 
-    setPembelian(updatedList);
-    api.saveToLocal(updatedList, master);
-    await api.savePembelian(itemData);
-    if (isServer) {
-      await fetchServerPembelian(page);
+      // 2. Jika sukses tersimpan di server
+      const existingIndex = pembelian.findIndex(p => p.id === itemData.id);
+      let updatedList;
+      if (existingIndex >= 0) {
+        updatedList = [...pembelian];
+        updatedList[existingIndex] = itemData;
+      } else {
+        updatedList = [itemData, ...pembelian];
+      }
+
+      setPembelian(updatedList);
+      api.saveToLocal(updatedList, master);
+
+      if (isServer) {
+        await fetchServerPembelian(page);
+      }
+      setIsModalOpen(false);
+      setSelectedItem(null);
+    } catch (err) {
+      console.error('Error saat menyimpan transaksi:', err);
+      // Fallback: simpan di lokal dan beritahu user
+      const existingIndex = pembelian.findIndex(p => p.id === itemData.id);
+      let updatedList;
+      if (existingIndex >= 0) {
+        updatedList = [...pembelian];
+        updatedList[existingIndex] = itemData;
+      } else {
+        updatedList = [itemData, ...pembelian];
+      }
+      setPembelian(updatedList);
+      api.saveToLocal(updatedList, master);
+
+      alert(`Peringatan: Gagal menyimpan data ke database server (${err.message || 'Koneksi terputus'}). Data sementara tersimpan di browser (offline mode).`);
+      setIsModalOpen(false);
+      setSelectedItem(null);
     }
-    setIsModalOpen(false);
-    setSelectedItem(null);
   };
 
 
@@ -149,12 +172,16 @@ export default function App() {
   // Delete Item
   const handleDeleteItem = async (id) => {
     if (!confirm('Yakin ingin menghapus data pembelian ini?')) return;
-    const updated = pembelian.filter(p => p.id !== id);
-    setPembelian(updated);
-    api.saveToLocal(updated, master);
-    await api.deletePembelian(id);
-    if (isServer) {
-      await fetchServerPembelian(page);
+    try {
+      await api.deletePembelian(id);
+      const updated = pembelian.filter(p => p.id !== id);
+      setPembelian(updated);
+      api.saveToLocal(updated, master);
+      if (isServer) {
+        await fetchServerPembelian(page);
+      }
+    } catch (err) {
+      alert(`Gagal menghapus data: ${err.message || 'Terjadi kesalahan sistem'}`);
     }
   };
 
