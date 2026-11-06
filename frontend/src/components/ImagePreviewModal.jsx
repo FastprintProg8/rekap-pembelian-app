@@ -51,3 +51,4 @@ export default function ImagePreviewModal({ isOpen, onClose, src, title = 'Foto 
     </div>
   );
 }
+
