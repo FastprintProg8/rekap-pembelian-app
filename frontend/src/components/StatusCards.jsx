@@ -2,21 +2,29 @@ import React from 'react';
 import { formatRupiah } from '../utils/formatters';
 import { Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
 
-export default function StatusCards({ items = [], activeStatus, onSelectStatus }) {
-  const stats = {
+export default function StatusCards({ items = [], serverStats = null, activeStatus, onSelectStatus }) {
+  let stats = {
     belum: { count: 0, total: 0 },
     diproses: { count: 0, total: 0 },
     dibayar: { count: 0, total: 0 }
   };
 
-  items.forEach(it => {
-    const st = it.status || 'belum';
-    const amount = Number(it.totalNota ?? it.totalHitungan ?? 0);
-    if (stats[st]) {
-      stats[st].count += 1;
-      stats[st].total += amount;
-    }
-  });
+  if (serverStats) {
+    stats = {
+      belum: serverStats.belum || stats.belum,
+      diproses: serverStats.diproses || stats.diproses,
+      dibayar: serverStats.dibayar || stats.dibayar
+    };
+  } else {
+    items.forEach(it => {
+      const st = it.status || 'belum';
+      const amount = Number(it.totalNota ?? it.totalHitungan ?? 0);
+      if (stats[st]) {
+        stats[st].count += 1;
+        stats[st].total += amount;
+      }
+    });
+  }
 
   const cards = [
     {

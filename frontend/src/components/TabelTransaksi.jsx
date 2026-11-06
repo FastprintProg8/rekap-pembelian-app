@@ -5,14 +5,43 @@ import ImagePreviewModal from './ImagePreviewModal';
 
 const ITEMS_PER_PAGE = 20;
 
-export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPay }) {
+export default function TabelTransaksi({
+  items = [],
+  pagination = null, // { page, limit, total, totalPages } jika serverside
+  onPageChange = null,
+  onEdit,
+  onDelete,
+  onQuickPay
+}) {
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState(null); // { src, title }
 
-  // Reset ke halaman 1 jika filter / data berubah
+  // Jika serverside mode aktif
+  const isServerSide = !!pagination;
+  const page = isServerSide ? pagination.page : currentPage;
+  const totalPages = isServerSide ? pagination.totalPages : Math.ceil(items.length / ITEMS_PER_PAGE);
+  const totalCount = isServerSide ? pagination.total : items.length;
+  const limit = isServerSide ? pagination.limit : ITEMS_PER_PAGE;
+  const startIndex = (page - 1) * limit;
+
+  const currentItems = isServerSide ? items : items.slice(startIndex, startIndex + limit);
+
+  const handlePrev = () => {
+    const target = Math.max(page - 1, 1);
+    if (isServerSide && onPageChange) onPageChange(target);
+    else setCurrentPage(target);
+  };
+
+  const handleNext = () => {
+    const target = Math.min(page + 1, totalPages);
+    if (isServerSide && onPageChange) onPageChange(target);
+    else setCurrentPage(target);
+  };
+
+  // Reset ke halaman 1 jika filter / data berubah (client-side only)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [items.length]);
+    if (!isServerSide) setCurrentPage(1);
+  }, [items.length, isServerSide]);
 
   if (items.length === 0) {
     return (
@@ -22,11 +51,6 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
       </div>
     );
   }
-
-  // Hitung Pagination
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
@@ -190,14 +214,14 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
       {/* Pagination Bar */}
       <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
         <div>
-          Menampilkan <span className="font-bold text-slate-900">{items.length === 0 ? 0 : startIndex + 1}</span> - <span className="font-bold text-slate-900">{Math.min(startIndex + ITEMS_PER_PAGE, items.length)}</span> dari <span className="font-bold text-slate-900">{items.length}</span> transaksi
+          Menampilkan <span className="font-bold text-slate-900">{totalCount === 0 ? 0 : startIndex + 1}</span> - <span className="font-bold text-slate-900">{Math.min(startIndex + limit, totalCount)}</span> dari <span className="font-bold text-slate-900">{totalCount}</span> transaksi
         </div>
 
         {totalPages > 1 && (
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              onClick={handlePrev}
+              disabled={page === 1}
               className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
               title="Halaman Sebelumnya"
             >
@@ -205,12 +229,12 @@ export default function TabelTransaksi({ items = [], onEdit, onDelete, onQuickPa
             </button>
 
             <span className="px-2 font-semibold">
-              Halaman {currentPage} dari {totalPages}
+              Halaman {page} dari {totalPages}
             </span>
 
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={handleNext}
+              disabled={page === totalPages}
               className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
               title="Halaman Selanjutnya"
             >

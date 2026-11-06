@@ -68,6 +68,44 @@ export const api = {
     };
   },
 
+  async getPembelianServer({ page = 1, limit = 20, search = '', status = '', peruntukan = '', bulan = '' } = {}) {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page);
+    if (limit) params.append('limit', limit);
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    if (peruntukan) params.append('peruntukan', peruntukan);
+    if (bulan) params.append('bulan', bulan);
+
+    try {
+      const res = await fetch(`${getApiBase()}/pembelian?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        const normalized = (json.data || []).map(p => ({
+          ...p,
+          items: (p.items || []).map(it => {
+            const hrg = Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0);
+            return {
+              ...it,
+              qty: Number(it.qty) || 1,
+              hargaSatuan: hrg,
+              harga: hrg
+            };
+          })
+        }));
+        return {
+          data: normalized,
+          pagination: json.pagination || { page: 1, limit, total: 0, totalPages: 1 },
+          stats: json.stats || null,
+          isServer: true
+        };
+      }
+    } catch (e) {
+      console.warn('Gagal ambil data serverside:', e);
+    }
+    return null;
+  },
+
   async saveAiConfig(apiKey) {
     try {
       localStorage.setItem(AI_LS_KEY, JSON.stringify({ apiKey }));

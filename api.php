@@ -210,6 +210,115 @@ function getPayload() {
     return json_decode($raw, true) ?: [];
 }
 
+
+// 0. GET /api/pembelian (Server-side Pagination, Filter & Stats)
+if ($uri === '/api/pembelian' && $method === 'GET') {
+    $page = max(1, intval(isset($_GET['page']) ? $_GET['page'] : 1));
+    $limit = max(1, min(100, intval(isset($_GET['limit']) ? $_GET['limit'] : 20)));
+    $offset = ($page - 1) * $limit;
+
+    $search = trim(isset($_GET['search']) ? $_GET['search'] : '');
+    $status = trim(isset($_GET['status']) ? $_GET['status'] : '');
+    $peruntukan = trim(isset($_GET['peruntukan']) ? $_GET['peruntukan'] : '');
+    $bulan = trim(isset($_GET['bulan']) ? $_GET['bulan'] : '');
+
+    // 1. Hitung ringkasan stats kartu (belum, diproses, dibayar)
+    $stats = [
+        'belum' => ['count' => 0, 'total' => 0],
+        'diproses' => ['count' => 0, 'total' => 0],
+        'dibayar' => ['count' => 0, 'total' => 0]
+    ];
+
+    $stStat = $pdo->query("
+        SELECT status, COUNT(*) as cnt, SUM(COALESCE(totalNota, 0)) as tot 
+        FROM pembelian 
+        GROUP BY status
+    ");
+    while ($row = $stStat->fetch()) {
+        $stName = $row['status'] ?: 'belum';
+        if (isset($stats[$stName])) {
+            $stats[$stName]['count'] = intval($row['cnt']);
+            $stats[$stName]['total'] = floatval($row['tot']);
+        }
+    }
+
+    // 2. Bangun klausa WHERE untuk filter
+    $where = [];
+    $params = [];
+
+    if ($status !== '') {
+        $where[] = "p.status = :status";
+        $params[':status'] = $status;
+    }
+    if ($peruntukan !== '') {
+        $where[] = "p.peruntukan = :peruntukan";
+        $params[':peruntukan'] = $peruntukan;
+    }
+    if ($bulan !== '') {
+        $where[] = "p.tanggal LIKE :bulan";
+        $params[':bulan'] = $bulan . '-%';
+    }
+    if ($search !== '') {
+        $where[] = "(p.toko LIKE :search OR p.noPesanan LIKE :search OR p.keterangan LIKE :search OR EXISTS (
+            SELECT 1 FROM pembelian_items pi WHERE pi.pembelian_id = p.id AND pi.nama LIKE :search
+        ))";
+        $params[':search'] = '%' . $search . '%';
+    }
+
+    $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+
+    // Hitung total baris yang cocok
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM pembelian p $whereSql");
+    $countStmt->execute($params);
+    $totalRows = intval($countStmt->fetchColumn());
+
+    // Ambil baris dengan LIMIT & OFFSET
+    $listSql = "SELECT p.* FROM pembelian p $whereSql ORDER BY p.tanggal DESC, p.createdAt DESC LIMIT $limit OFFSET $offset";
+    $listStmt = $pdo->prepare($listSql);
+    $listStmt->execute($params);
+    $pembelian = $listStmt->fetchAll();
+
+    // Ambil items hanya untuk ID pembelian yang terpilih di halaman ini
+    $pIds = array_map(function($row) { return $row['id']; }, $pembelian);
+    $itemsMap = [];
+    if (!empty($pIds)) {
+        $inPlaceholders = implode(',', array_fill(0, count($pIds), '?'));
+        $iStmt = $pdo->prepare("SELECT * FROM pembelian_items WHERE pembelian_id IN ($inPlaceholders) ORDER BY pembelian_id, urutan ASC");
+        $iStmt->execute($pIds);
+        while ($r = $iStmt->fetch()) {
+            $pid = $r['pembelian_id'];
+            if (!isset($itemsMap[$pid])) $itemsMap[$pid] = [];
+            $itemsMap[$pid][] = [
+                'nama' => $r['nama'] ?: '',
+                'qty' => floatval($r['qty']),
+                'satuan' => $r['satuan'] ?: '',
+                'harga' => floatval($r['harga']),
+                'hargaSatuan' => floatval($r['harga'])
+            ];
+        }
+    }
+
+    foreach ($pembelian as &$p) {
+        $p['items'] = isset($itemsMap[$p['id']]) ? $itemsMap[$p['id']] : [];
+        $p['diskon'] = floatval($p['diskon']);
+        $p['ongkir'] = floatval($p['ongkir']);
+        $p['biaya'] = floatval($p['biaya']);
+        $p['totalNota'] = $p['totalNota'] !== null ? floatval($p['totalNota']) : null;
+        $p['createdAt'] = intval($p['createdAt']);
+    }
+
+    jsonResponse([
+        'data' => $pembelian,
+        'pagination' => [
+            'page' => $page,
+            'limit' => $limit,
+            'total' => $totalRows,
+            'totalPages' => ceil($totalRows / $limit)
+        ],
+        'stats' => $stats
+    ]);
+}
+
 // 1. GET /api/state
 if ($uri === '/api/state' && $method === 'GET') {
     $pQuery = $pdo->query("SELECT * FROM pembelian ORDER BY tanggal DESC, createdAt DESC");

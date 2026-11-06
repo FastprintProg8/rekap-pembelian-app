@@ -120,7 +120,7 @@ export default function FormPembelianModal({
         try {
           const rawBase64 = base64Data.split(',')[1] || base64Data;
           const result = await api.scanNota(rawBase64, file.type, aiApiKey);
-          
+
           // Auto-fill dari AI
           setFormData(prev => ({
             ...prev,
@@ -135,12 +135,12 @@ export default function FormPembelianModal({
             keterangan: result.catatan || prev.keterangan,
             items: result.items?.length > 0
               ? result.items.map((it, idx) => ({
-                  id: String(idx + 1),
-                  nama: it.nama,
-                  qty: it.qty || 1,
-                  satuan: it.satuan || 'pcs',
-                  hargaSatuan: it.harga_satuan || 0
-                }))
+                id: String(idx + 1),
+                nama: it.nama,
+                qty: it.qty || 1,
+                satuan: it.satuan || 'pcs',
+                hargaSatuan: it.harga_satuan || 0
+              }))
               : prev.items
           }));
         } catch (err) {
@@ -187,7 +187,7 @@ export default function FormPembelianModal({
   return (
     <div onClick={onClose} className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
       <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl w-full max-w-3xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
-        
+
         {/* Header Modal */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
           <div>
@@ -208,7 +208,7 @@ export default function FormPembelianModal({
 
         {/* Scrollable Form Body */}
         <form id="formPembelian" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          
+
           {/* Section 1: Upload Foto & AI Scan */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">

@@ -27,6 +27,11 @@ export default function App() {
   const [peruntukanFilter, setPeruntukanFilter] = useState('');
   const [bulanFilter, setBulanFilter] = useState('');
 
+  // Server-side State
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const [serverStats, setServerStats] = useState(null);
+
   // Modals & Drawer State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -62,13 +67,48 @@ export default function App() {
   const loadData = async () => {
     setLoading(true);
     const data = await api.getInitialState();
-    setPembelian(data.pembelian || []);
     setMaster(data.master || DEFAULT_MASTER);
     setAiActive(data.aiActive);
     setAiApiKey(data.aiApiKey || '');
     setIsServer(data.isServer);
+
+    if (data.isServer) {
+      await fetchServerPembelian(1);
+    } else {
+      setPembelian(data.pembelian || []);
+      setLoading(false);
+    }
+  };
+
+  const fetchServerPembelian = async (targetPage = 1) => {
+    setLoading(true);
+    const res = await api.getPembelianServer({
+      page: targetPage,
+      limit: 20,
+      search,
+      status: statusFilter,
+      peruntukan: peruntukanFilter,
+      bulan: bulanFilter
+    });
+
+    if (res && res.isServer) {
+      setPembelian(res.data);
+      setPagination(res.pagination);
+      setServerStats(res.stats);
+      setPage(targetPage);
+    }
     setLoading(false);
   };
+
+  // Trigger server-side fetch saat filter berubah
+  useEffect(() => {
+    if (isServer) {
+      const timer = setTimeout(() => {
+        fetchServerPembelian(1);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [search, statusFilter, peruntukanFilter, bulanFilter, isServer]);
 
   // Save Item
   const handleSaveItem = async (itemData) => {
@@ -83,19 +123,9 @@ export default function App() {
 
     setPembelian(updatedList);
     api.saveToLocal(updatedList, master);
-    const saveRes = await api.savePembelian(itemData);
-    // Jika backend mengembalikan path file fisik di /storage/uploads/...
-    if (saveRes && (saveRes.fotoNota || saveRes.buktiBayar)) {
-      const idx = updatedList.findIndex(p => p.id === itemData.id);
-      if (idx >= 0) {
-        updatedList[idx] = {
-          ...updatedList[idx],
-          fotoNota: saveRes.fotoNota || updatedList[idx].fotoNota,
-          buktiBayar: saveRes.buktiBayar || updatedList[idx].buktiBayar
-        };
-        setPembelian([...updatedList]);
-        api.saveToLocal(updatedList, master);
-      }
+    await api.savePembelian(itemData);
+    if (isServer) {
+      await fetchServerPembelian(page);
     }
     setIsModalOpen(false);
     setSelectedItem(null);
@@ -123,6 +153,9 @@ export default function App() {
     setPembelian(updated);
     api.saveToLocal(updated, master);
     await api.deletePembelian(id);
+    if (isServer) {
+      await fetchServerPembelian(page);
+    }
   };
 
   // Save Master
@@ -250,6 +283,7 @@ export default function App() {
         {/* Status Signature Cards */}
         <StatusCards
           items={pembelian}
+          serverStats={serverStats}
           activeStatus={statusFilter}
           onSelectStatus={setStatusFilter}
         />
@@ -274,7 +308,9 @@ export default function App() {
           </div>
         ) : (
           <TabelTransaksi
-            items={filteredItems}
+            items={isServer ? pembelian : filteredItems}
+            pagination={isServer ? pagination : null}
+            onPageChange={fetchServerPembelian}
             onEdit={(item) => { setSelectedItem(item); setIsModalOpen(true); }}
             onDelete={handleDeleteItem}
             onQuickPay={handleQuickPay}
