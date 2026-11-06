@@ -1,4 +1,28 @@
 <?php
+// Helper: Simpan base64 ke file fisik di storage/uploads
+function saveBase64ToStorage($dataUrl, $prefix = 'nota') {
+    if (empty($dataUrl) || !is_string($dataUrl)) return $dataUrl;
+    if (strpos($dataUrl, '/storage/') === 0 || strpos($dataUrl, 'data:image/') !== 0) {
+        return $dataUrl;
+    }
+    if (preg_match('/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/', $dataUrl, $m)) {
+        $ext = strtolower(str_replace('jpeg', 'jpg', $m[1]));
+        $bin = base64_decode($m[2]);
+        if ($bin !== false) {
+            $storageDir = dirname(__DIR__) . '/storage/uploads';
+            if (!is_dir($storageDir)) {
+                @mkdir($storageDir, 0777, true);
+            }
+            $filename = $prefix . '_' . time() . '_' . substr(md5(uniqid()), 0, 6) . '.' . $ext;
+            $dest = $storageDir . '/' . $filename;
+            if (@file_put_contents($dest, $bin) !== false) {
+                return '/storage/uploads/' . $filename;
+            }
+        }
+    }
+    return $dataUrl;
+}
+
 // Helper kompatibilitas PHP 5.6+
 function arrGet($arr, $key, $default = '') {
     return isset($arr[$key]) ? $arr[$key] : $default;
@@ -18,7 +42,10 @@ function envValue($name, $default = '') {
     static $env = null;
     if ($env === null) {
         $env = [];
-        $f = __DIR__ . '/.env';
+        $f = dirname(__DIR__) . '/.env';
+        if (!is_readable($f)) {
+            $f = __DIR__ . '/.env';
+        }
         if (is_readable($f)) {
             foreach (file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
                 if (preg_match('/^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/', $line, $m) && strpos(ltrim($line), '#') !== 0) {
@@ -91,7 +118,9 @@ try {
         ");
     } else {
         // Default: SQLite via PDO
-        $dbFile = __DIR__ . '/data.db';
+        $dbDir = __DIR__ . '/database';
+        if (!is_dir($dbDir)) { @mkdir($dbDir, 0777, true); }
+        $dbFile = $dbDir . '/data.db';
         $pdo = new PDO("sqlite:{$dbFile}", null, null, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
@@ -286,8 +315,8 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         ':tglProses' => arrGet($p, 'tglProses', ''),
         ':tglBayar' => arrGet($p, 'tglBayar', ''),
         ':keterangan' => arrGet($p, 'keterangan', ''),
-        ':fotoNota' => arrGet($p, 'fotoNota', ''),
-        ':buktiBayar' => arrGet($p, 'buktiBayar', ''),
+        ':fotoNota' => saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota'),
+        ':buktiBayar' => saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti'),
         ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
     ]);
 
@@ -309,7 +338,7 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         }
     }
 
-    jsonResponse(['success' => true, 'id' => $p['id']]);
+    jsonResponse(['success' => true, 'id' => $p['id'], 'fotoNota' => saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota'), 'buktiBayar' => saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti')]);
 }
 
 // POST /api/ai-config

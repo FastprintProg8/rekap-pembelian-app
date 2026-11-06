@@ -32,7 +32,18 @@ try {
 
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 3000;
-const DB_FILE = process.env.DB_PATH || path.join(__dirname, 'data.db');
+const rootEnv = path.resolve(__dirname, '..', '.env');
+if (fs.existsSync(rootEnv)) {
+  for (const line of fs.readFileSync(rootEnv, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/i);
+    if (m && !line.trim().startsWith('#') && process.env[m[1]] === undefined) {
+      process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+  }
+}
+const DB_FILE = process.env.DB_PATH || path.resolve(__dirname, 'database', 'data.db');
+const DIST_DIR = path.resolve(__dirname, '..', 'dist');
+const STORAGE_DIR = path.resolve(__dirname, '..', 'storage');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const NOTA_MODEL = process.env.NOTA_MODEL || 'claude-sonnet-5-5';
 
@@ -171,7 +182,38 @@ function getAllPembelian() {
   }));
 }
 
+
+// Helper: Simpan image base64 ke disk fisik storage/uploads/ dan kembalikan URL path
+function saveBase64Image(dataUrl, prefix = 'nota') {
+  if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
+  // Jika sudah berupa path URL storage (/storage/...) atau bukan base64, biarkan apa adanya
+  if (dataUrl.startsWith('/storage/') || !dataUrl.startsWith('data:image/')) {
+    return dataUrl;
+  }
+
+  try {
+    const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+    if (!matches || matches.length < 3) return dataUrl;
+
+    const ext = matches[1].replace('jpeg', 'jpg');
+    const buffer = Buffer.from(matches[2], 'base64');
+    const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+    const uploadsDir = path.join(STORAGE_DIR, 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    const filePath = path.join(uploadsDir, fileName);
+    fs.writeFileSync(filePath, buffer);
+    return `/storage/uploads/${fileName}`;
+  } catch (err) {
+    console.error('Gagal menyimpan file image ke storage:', err);
+    return dataUrl; // fallback simpan base64 jika gagal tulis file
+  }
+}
+
 function savePembelianRecord(p) {
+  const savedFotoNota = saveBase64Image(p.fotoNota, 'nota');
+  const savedBuktiBayar = saveBase64Image(p.buktiBayar, 'bukti');
   const insertPembelian = db.prepare(`
     INSERT INTO pembelian (
       id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
@@ -215,8 +257,8 @@ function savePembelianRecord(p) {
     p.tglProses || '',
     p.tglBayar || '',
     p.keterangan || '',
-    p.fotoNota || '',
-    p.buktiBayar || '',
+    savedFotoNota || '',
+    savedBuktiBayar || '',
     p.createdAt || Date.now()
   );
 
@@ -239,6 +281,7 @@ function savePembelianRecord(p) {
       );
     });
   }
+  return { fotoNota: savedFotoNota, buktiBayar: savedBuktiBayar };
 }
 
 function deletePembelianRecord(id) {
@@ -312,8 +355,8 @@ const server = http.createServer((req, res) => {
 
   if (pathname === '/api/pembelian' && req.method === 'POST') {
     getBody().then(record => {
-      savePembelianRecord(record);
-      sendJSON({ success: true, id: record.id });
+      const saved = savePembelianRecord(record);
+      sendJSON({ success: true, id: record.id, fotoNota: saved.fotoNota, buktiBayar: saved.buktiBayar });
     }).catch(err => sendJSON({ error: err.message }, 400));
     return;
   }
@@ -365,15 +408,27 @@ const server = http.createServer((req, res) => {
   }
 
   // Static File Serving
-  // Jangan pernah mengirim database, kode server, atau file konfigurasi ke browser
-  if (/(^|\/)\.|\.(db|db-wal|db-shm|sqlite|php|sh|md|yml|yaml|bat)$/i.test(pathname) ||
-      /^\/(server\.js|package(-lock)?\.json|Dockerfile)$/i.test(pathname)) {
-    res.writeHead(404); res.end('Not found'); return;
+  // Layani file storage gambar
+  if (pathname.startsWith('/storage/')) {
+    const rel = pathname.replace(/^\/storage\//, '');
+    const sPath = path.join(STORAGE_DIR, rel);
+    if (fs.existsSync(sPath) && !fs.statSync(sPath).isDirectory()) {
+      const ext = path.extname(sPath).toLowerCase();
+      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+      return fs.createReadStream(sPath).pipe(res);
+    }
+    res.writeHead(404); return res.end('Not found');
   }
-  let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
-  
+
+  // Lindungi file sensitif
+  if (/(^|\/)\.|\.(db|db-wal|db-shm|sqlite|php|sh|md|yml|yaml|bat)$/i.test(pathname)) {
+    res.writeHead(404); return res.end('Not found');
+  }
+
+  // Layani hasil build dist/
+  let filePath = path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname);
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(__dirname, 'index.html');
+    filePath = path.join(DIST_DIR, 'index.html');
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -382,8 +437,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(filePath, (err, content) => {
     if (err) {
       res.writeHead(500);
-      res.end('Error loading ' + pathname);
-      return;
+      return res.end('Error loading dist. Pastikan frontend sudah di-build.');
     }
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
@@ -391,6 +445,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`Server Rekap Pembelian (SQLite) berjalan di http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-  console.log(`File database: ${DB_FILE} (Otomatis dibuat & terstruktur)`);
+  console.log(`Server Rekap Pembelian berjalan di http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  console.log(`File database: ${DB_FILE}`);
 });

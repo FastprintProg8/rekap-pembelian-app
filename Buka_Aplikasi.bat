@@ -9,6 +9,10 @@ echo ========================================================
 echo.
 
 :: 1. Cek node.exe bawaan di folder aplikasi (Portable)
+if exist "%~dp0node_bin\node.exe" (
+    set "NODE_CMD=%~dp0node_bin\node.exe"
+    goto :jalankan
+)
 if exist "%~dp0node.exe" (
     set "NODE_CMD=%~dp0node.exe"
     goto :jalankan
@@ -27,13 +31,21 @@ if exist "%ProgramFiles%\nodejs\node.exe" (
     goto :jalankan
 )
 
-:: Fallback jika benar-benar tidak ada
-start "" "%~dp0index.html"
+echo [PERINGATAN] Node.js tidak ditemukan di komputer.
+pause
 exit
 
 :jalankan
+:: Auto build jika dist belum ada
+if not exist "%~dp0dist\index.html" (
+    echo Menyiapkan tampilan aplikasi...
+    cd /d "%~dp0frontend"
+    call "%NODE_CMD%" "%~dp0frontend\node_modules\vite\bin\vite.js" build
+    cd /d "%~dp0"
+)
+
 echo [OK] Menjalankan server database dan LAN...
 echo.
 start "" "http://localhost:3000"
-"%NODE_CMD%" "%~dp0server.js"
+"%NODE_CMD%" "%~dp0backend\server.js"
 pause
