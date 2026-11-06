@@ -134,6 +134,7 @@ export default function App() {
       }
       setIsModalOpen(false);
       setSelectedItem(null);
+      return true;
     } catch (err) {
       console.error('Error saat menyimpan transaksi:', err);
       // Fallback: simpan di lokal dan beritahu user
@@ -148,9 +149,9 @@ export default function App() {
       setPembelian(updatedList);
       api.saveToLocal(updatedList, master);
 
-      alert(`Peringatan: Gagal menyimpan data ke database server (${err.message || 'Koneksi terputus'}). Data sementara tersimpan di browser (offline mode).`);
-      setIsModalOpen(false);
-      setSelectedItem(null);
+      alert(`Peringatan: Gagal menyimpan data ke database server (${err.message || 'Koneksi terputus'}). Form tetap disimpan di perangkat Anda agar tidak perlu input ulang.`);
+      // Form modal TIDAK DITUTUP agar user tidak kehilangan context dan bisa coba lagi
+      return false;
     }
   };
 

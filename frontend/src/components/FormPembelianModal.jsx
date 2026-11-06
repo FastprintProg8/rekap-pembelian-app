@@ -3,6 +3,8 @@ import { X, Plus, Trash2, Sparkles, Upload, AlertTriangle, Check, Camera } from 
 import { formatRupiah, hitungTotalHitungan, generateId } from '../utils/formatters';
 import { api } from '../services/api';
 
+const DRAFT_KEY = 'rekap-pembelian:form-draft';
+
 export default function FormPembelianModal({
   isOpen,
   onClose,
@@ -34,6 +36,7 @@ export default function FormPembelianModal({
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -54,28 +57,52 @@ export default function FormPembelianModal({
         items: normalizedItems.length > 0 ? normalizedItems : [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
       });
     } else {
-      setFormData({
-        id: generateId(),
-        tanggal: new Date().toISOString().split('T')[0],
-        toko: '',
-        platform: master.platform?.[0] || 'Tokopedia',
-        noPesanan: '',
-        peruntukan: master.peruntukan?.[0] || 'G22',
-        diskon: 0,
-        ongkir: 0,
-        biaya: 0,
-        totalNota: '',
-        metode: master.metode?.[0] || 'Transfer bank',
-        akun: '',
-        status: 'belum',
-        tglBayar: '',
-        keterangan: '',
-        fotoNota: '',
-        items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
-      });
+      // Cek apakah ada draft yang tersimpan sebelumnya di localStorage
+      let restoredFromDraft = false;
+      try {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed && typeof parsed === 'object') {
+            setFormData(parsed);
+            restoredFromDraft = true;
+          }
+        }
+      } catch (e) {}
+
+      if (!restoredFromDraft) {
+        setFormData({
+          id: generateId(),
+          tanggal: new Date().toISOString().split('T')[0],
+          toko: '',
+          platform: master.platform?.[0] || 'Tokopedia',
+          noPesanan: '',
+          peruntukan: master.peruntukan?.[0] || 'G22',
+          diskon: 0,
+          ongkir: 0,
+          biaya: 0,
+          totalNota: '',
+          metode: master.metode?.[0] || 'Transfer bank',
+          akun: '',
+          status: 'belum',
+          tglBayar: '',
+          keterangan: '',
+          fotoNota: '',
+          items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
+        });
+      }
     }
     setScanError('');
   }, [initialData, isOpen, master]);
+
+  // Simpan draft otomatis saat form berubah (khusus mode tambah data baru)
+  useEffect(() => {
+    if (isOpen && !initialData && formData.id) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      } catch (e) {}
+    }
+  }, [formData, isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -153,8 +180,10 @@ export default function FormPembelianModal({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     // Otomatis ubah status ke diproses jika akun terisi dan status masih belum
     let st = formData.status;
     if (formData.akun && st === 'belum') {
@@ -164,7 +193,7 @@ export default function FormPembelianModal({
       st = 'dibayar';
     }
 
-    onSave({
+    const payload = {
       ...formData,
       status: st,
       totalHitungan,
@@ -181,7 +210,20 @@ export default function FormPembelianModal({
           harga: hrg // kompatibilitas dengan backend SQLite/MySQL
         };
       })
-    });
+    };
+
+    setIsSubmitting(true);
+    try {
+      const ok = await onSave(payload);
+      if (ok) {
+        // Hapus draft jika sukses tersimpan
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch (err) {}
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -524,10 +566,11 @@ export default function FormPembelianModal({
             <button
               type="submit"
               form="formPembelian"
-              className="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-xl shadow-sm hover:shadow transition flex items-center gap-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 disabled:opacity-50 rounded-xl shadow-sm hover:shadow transition flex items-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              Simpan Pembelian
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Pembelian'}
             </button>
           </div>
         </div>

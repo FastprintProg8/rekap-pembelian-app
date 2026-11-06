@@ -410,10 +410,14 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         $savedFotoNota = saveBase64ToStorage(arrGet($p, 'fotoNota', ''), 'nota');
         $savedBuktiBayar = saveBase64ToStorage(arrGet($p, 'buktiBayar', ''), 'bukti');
 
+        $tglVal = arrGet($p, 'tanggal', '');
+        $tglProsesVal = arrGet($p, 'tglProses', '');
+        $tglBayarVal = arrGet($p, 'tglBayar', '');
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':id' => $p['id'],
-            ':tanggal' => arrGet($p, 'tanggal', ''),
+            ':tanggal' => !empty($tglVal) ? $tglVal : null,
             ':toko' => arrGet($p, 'toko', ''),
             ':platform' => arrGet($p, 'platform', ''),
             ':noPesanan' => arrGet($p, 'noPesanan', ''),
@@ -425,8 +429,8 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
             ':metode' => arrGet($p, 'metode', ''),
             ':akun' => arrGet($p, 'akun', ''),
             ':status' => arrGet($p, 'status', 'belum'),
-            ':tglProses' => arrGet($p, 'tglProses', ''),
-            ':tglBayar' => arrGet($p, 'tglBayar', ''),
+            ':tglProses' => !empty($tglProsesVal) ? $tglProsesVal : null,
+            ':tglBayar' => !empty($tglBayarVal) ? $tglBayarVal : null,
             ':keterangan' => arrGet($p, 'keterangan', ''),
             ':fotoNota' => $savedFotoNota,
             ':buktiBayar' => $savedBuktiBayar,
