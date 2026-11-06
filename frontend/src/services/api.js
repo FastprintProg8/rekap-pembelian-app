@@ -168,16 +168,58 @@ export const api = {
   },
 
     async scanNota(imageBase64, mediaType = 'image/jpeg', clientApiKey = '') {
-    const NOTA_PROMPT = `Anda membaca foto nota, struk, invoice, atau rincian pesanan belanja di Indonesia.
-Kembalikan HANYA format JSON berikut:
+    const NOTA_PROMPT = `Anda adalah asisten cerdas spesialis membaca dan mengekstrak data dari berbagai jenis nota, struk belanja, invoice, maupun bon/nota manual bertuliskan tangan di Indonesia (termasuk toko bahan bangunan, besi/baja, kelontong, bengkel, supplier, toko ritel, dan e-commerce).
+
+Tugas Anda adalah membaca gambar nota ini dengan SANGAT TELITI dan mengembalikan data HANYA dalam format JSON valid.
+
+PANDUAN & ATURAN PENTING:
+1. INFORMASI UMUM:
+   - "toko": Nama toko/penjual atau stempel/kop nota (contoh: "UD. SUMBER REJEKI SAIDIN"). Jika ada nama orang atau keterangan toko, cantumkan. Jika tidak ada, isi null.
+   - "platform": Jika nota berasal dari e-commerce/marketplace (Shopee, Tokopedia, TikTok Shop, Lazada, Blibli, dll) isi namanya. Jika toko fisik/offline, isi "Offline" atau null.
+   - "tanggal": Format "YYYY-MM-DD". Perhatikan penulisan tanggal di nota (bisa format DD/MM/YY, DD-MM-YYYY, dsb). Jika tahun tertulis 2 digit (misal 24/25/26), konversikan ke 4 digit. Jika tidak terbaca, gunakan tanggal hari ini atau null.
+   - "no_pesanan": No nota, no invoice, no faktur, atau no pesanan (jika ada).
+   - "peruntukan": Pembeli / Tuan / Kepada Yth jika tertera di nota (contoh: "Mas Samsol").
+   - "catatan": Keterangan tambahan penting (misal catatan pembayaran "LUNAS", no rekening BCA, dsb).
+
+2. PENANGANAN NOTA TULISAN TANGAN / TOKO BANGUNAN (SANGAT KRUSIAL):
+   - Seringkali pada nota tulisan tangan di Indonesia, kolom "HARGA" atau "HARGA SATUAN" ditulis dalam SINGKATAN RIBUAN (angka "000" dihilangkan).
+     CONTOH KASUS NYATA:
+     - Qty: 3, Harga tertulis "185", Jumlah tertulis "555.000".
+       Artinya harga_satuan SEBENARNYA adalah 185000 (Rp 185.000), BUKAN 185 perak!
+     - Qty: 15, Harga tertulis "85", Jumlah tertulis "1.275.000".
+       Artinya harga_satuan adalah 85000 (Rp 85.000).
+   - Selalu validasi matematis: jika (qty * harga_satuan) jauh lebih kecil dari nilai di kolom Jumlah/Total karena ribuan disingkat, kalikan harga_satuan dengan 1.000 atau sesuaikan agar konsisten dengan nilai rupiah sebenarnya di kolom Jumlah!
+   - Perhatikan item tambahan dengan tanda panah atau coretan di bagian bawah/luar tabel (contoh: "5 kg BENDRAT -> 115.000" atau barang titipan/tambahan). Masukkan juga ke dalam daftar items!
+   - Jika satu baris berisi kombinasi dimensi/ukuran (misal: "8x16 4. m = 48", "50 biji Begel 8x8"), tuliskan nama barang sejelas mungkin sesuai konteks barang material/bangunan tersebut.
+
+3. STRUKTUR ARRAY ITEMS:
+   Setiap item wajib memiliki:
+   - "nama": Nama barang / rincian jelas (string).
+   - "qty": Jumlah barang (number, float jika desimal, contoh 1.5 atau 20.5). Default 1 jika tidak tertera.
+   - "satuan": Satuan barang jika ada (contoh: "pcs", "batang", "btg", "kg", "m", "lonjor", "biji", "dus", "zak", dll). Jika tidak ada satuan eksplisit, gunakan "pcs".
+   - "harga_satuan": Harga per unit dalam rupiah penuh (number integer murni, tanpa titik/koma, contoh: 185000).
+
+4. TOTAL & BIAYA:
+   - "diskon": Potongan harga jika ada (number, default 0).
+   - "ongkir": Biaya pengiriman/ongkir jika ada (number, default 0).
+   - "biaya_layanan": Biaya layanan/admin/aplikasi/parkir jika ada (number, default 0).
+   - "total": Total akhir pembayaran yang tertera di nota (number murni). Jika ada tulisan total akhir seperti "5.394.700", pastikan diisi 5394700.
+
+FORMAT OUTPUT (HARUS PERSIS JSON INI, TANPA TEKS LAIN ATAU BACKTICKS):
 {
   "toko": string atau null,
   "platform": string atau null,
   "tanggal": "YYYY-MM-DD" atau null,
   "no_pesanan": string atau null,
   "peruntukan": string atau null,
+  "catatan": string atau null,
   "items": [
-    {"nama": string, "qty": number, "satuan": string, "harga_satuan": number}
+    {
+      "nama": string,
+      "qty": number,
+      "satuan": string,
+      "harga_satuan": number
+    }
   ],
   "diskon": number,
   "ongkir": number,
