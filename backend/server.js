@@ -342,6 +342,57 @@ const server = http.createServer((req, res) => {
   });
 
   // REST API Routes
+  if (pathname === '/api/pembelian' && req.method === 'GET') {
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = parseInt(url.searchParams.get('limit')) || 20;
+    const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+    const status = (url.searchParams.get('status') || '').trim();
+    const peruntukan = (url.searchParams.get('peruntukan') || '').trim();
+    const bulan = (url.searchParams.get('bulan') || '').trim();
+
+    const all = getAllPembelian();
+    const filtered = all.filter(p => {
+      if (status && p.status !== status) return false;
+      if (peruntukan && p.peruntukan !== peruntukan) return false;
+      if (bulan && (!p.tanggal || !p.tanggal.startsWith(bulan))) return false;
+      if (search) {
+        const matchToko = (p.toko || '').toLowerCase().includes(search);
+        const matchNo = (p.noPesanan || '').toLowerCase().includes(search);
+        const matchKet = (p.keterangan || '').toLowerCase().includes(search);
+        const matchBarang = (p.items || []).some(it => (it.nama || '').toLowerCase().includes(search));
+        if (!matchToko && !matchNo && !matchKet && !matchBarang) return false;
+      }
+      return true;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+
+    // Hitung stats
+    const stats = {
+      belum: { count: 0, total: 0 },
+      diproses: { count: 0, total: 0 },
+      dibayar: { count: 0, total: 0 }
+    };
+    for (const p of all) {
+      const st = p.status || 'belum';
+      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((acc, it) => acc + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) + Number(p.ongkir || 0) + Number(p.biaya || 0));
+      if (stats[st]) {
+        stats[st].count++;
+        stats[st].total += tot;
+      }
+    }
+
+    return sendJSON({
+      data: paged,
+      pagination: { page, limit, total, totalPages },
+      stats,
+      isServer: true
+    });
+  }
+
   if (pathname === '/api/state' && req.method === 'GET') {
     return sendJSON({
       pembelian: getAllPembelian(),
