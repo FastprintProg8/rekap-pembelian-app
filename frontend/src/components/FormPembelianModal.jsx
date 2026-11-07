@@ -507,6 +507,16 @@ export default function FormPembelianModal({
                 </div>
               ))}
             </div>
+
+            {/* Total / Subtotal Rincian di bagian bawah list rincian */}
+            <div className="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 bg-white/70 px-3 py-2 rounded-lg">
+              <span className="font-semibold">
+                {formData.kategori === 'gaji' ? 'Total Upah / Gaji:' : 'Total Rincian Barang:'}
+              </span>
+              <span className="font-bold text-slate-900 text-sm">
+                {formatRupiah(formData.items.reduce((acc, it) => acc + ((Number(it.qty) || 1) * (Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0))), 0))}
+              </span>
+            </div>
           </div>
 
           {/* Section 4: Biaya, Diskon, & Total */}
@@ -638,28 +648,23 @@ export default function FormPembelianModal({
         </form>
 
         {/* STICKY FOOTER MODAL (Di Luar Scroll Body) */}
-        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-          <div className="text-xs text-slate-500">
-            Total hitungan: <b className="text-slate-900 text-sm">{formatRupiah(totalHitungan)}</b>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              form="formPembelian"
-              disabled={isSubmitting}
-              className="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 disabled:opacity-50 rounded-xl shadow-sm hover:shadow transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <Check className="w-4 h-4" />
-              {isSubmitting ? 'Menyimpan...' : 'Simpan Pembelian'}
-            </button>
-          </div>
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 rounded-xl transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            form="formPembelian"
+            disabled={isSubmitting}
+            className="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 disabled:opacity-50 rounded-xl shadow-sm hover:shadow transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <Check className="w-4 h-4" />
+            {isSubmitting ? 'Menyimpan...' : 'Simpan Pembelian'}
+          </button>
         </div>
 
       </div>
