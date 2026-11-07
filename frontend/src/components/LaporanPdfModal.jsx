@@ -85,8 +85,37 @@ export default function LaporanPdfModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden print:max-h-none print:shadow-none print:border-none print:w-full print:rounded-none">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+      {/* CSS khusus cetak A4 dan Pengulangan Header Tabel */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 12mm 10mm 12mm 10mm;
+          }
+          body {
+            background-color: #fff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          thead {
+            display: table-header-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .avoid-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+        }
+      `}</style>
+
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden print:max-h-none print:shadow-none print:border-none print:w-full print:rounded-none print:overflow-visible">
         
         {/* Header Modal (Hidden saat print) */}
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0 print:hidden">
@@ -134,7 +163,7 @@ export default function LaporanPdfModal({
           </div>
 
           {/* KOTAK RINGKASAN: TOTAL PER MINGGU & TOTAL HARUS DIBAYAR */}
-          <div>
+          <div className="avoid-break">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-teal-700" />
               Ringkasan Kewajiban Pembayaran Per Minggu
@@ -277,22 +306,6 @@ export default function LaporanPdfModal({
                 </tr>
               </tfoot>
             </table>
-          </div>
-
-          {/* Tanda Tangan / Persetujuan */}
-          <div className="pt-8 grid grid-cols-2 text-center text-xs print:pt-6">
-            <div>
-              <p className="text-slate-500 mb-14">Dibuat Oleh,</p>
-              <p className="font-bold text-slate-900 border-t border-slate-300 inline-block px-8 pt-1">
-                Pengelola Kost G23
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500 mb-14">Disetujui Oleh,</p>
-              <p className="font-bold text-slate-900 border-t border-slate-300 inline-block px-8 pt-1">
-                Owner / Pimpinan
-              </p>
-            </div>
           </div>
 
         </div>
