@@ -321,38 +321,6 @@ export default function LaporanPdfModal({
               Ringkasan Kewajiban Pembayaran Per Minggu
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="bg-amber-50/80 border border-amber-200 p-3.5 rounded-xl">
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block mb-1">
-                  Total Harus Dibayar (Pending)
-                </span>
-                <span className="text-lg font-black text-amber-700 block">
-                  {formatRupiah(totalBelumLunas)}
-                </span>
-                <span className="text-[10px] text-amber-800">Prioritas untuk segera diselesaikan</span>
-              </div>
-
-              <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl">
-                <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block mb-1">
-                  Total Sudah Dibayar (Lunas)
-                </span>
-                <span className="text-lg font-black text-emerald-700 block">
-                  {formatRupiah(totalLunas)}
-                </span>
-                <span className="text-[10px] text-emerald-800">Transaksi berstatus lunas</span>
-              </div>
-
-              <div className="bg-slate-100 border border-slate-200 p-3.5 rounded-xl">
-                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                  Total Keseluruhan Periode
-                </span>
-                <span className="text-lg font-black text-slate-900 block">
-                  {formatRupiah(grandTotal)}
-                </span>
-                <span className="text-[10px] text-slate-600">{sortedItems.length} transaksi tercatat</span>
-              </div>
-            </div>
-
             {/* Tabel Rincian Per Minggu */}
             <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
               <table className="w-full text-left text-xs border-collapse">
