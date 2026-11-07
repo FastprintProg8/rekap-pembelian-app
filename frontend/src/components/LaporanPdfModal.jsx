@@ -93,6 +93,23 @@ export default function LaporanPdfModal({
             size: A4 portrait;
             margin: 12mm 10mm 12mm 10mm;
           }
+          /* Sembunyikan seluruh isi aplikasi web saat print */
+          body * {
+            visibility: hidden;
+          }
+          /* Hanya tampilkan area laporan PDF modal */
+          #area-laporan-pdf, #area-laporan-pdf * {
+            visibility: visible;
+          }
+          #area-laporan-pdf {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #fff !important;
+          }
           body {
             background-color: #fff !important;
             -webkit-print-color-adjust: exact !important;
@@ -146,7 +163,7 @@ export default function LaporanPdfModal({
         </div>
 
         {/* Printable Document Area */}
-        <div ref={printAreaRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 print:p-0 print:overflow-visible text-slate-800">
+        <div id="area-laporan-pdf" ref={printAreaRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 print:p-0 print:overflow-visible text-slate-800">
           
           {/* Kop Dokumen */}
           <div className="border-b-2 border-slate-900 pb-4 flex flex-wrap items-center justify-between gap-4">
