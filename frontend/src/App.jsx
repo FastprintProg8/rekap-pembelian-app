@@ -34,8 +34,33 @@ export default function App() {
   const [pagination, setPagination] = useState(null);
   const [serverStats, setServerStats] = useState(null);
 
-  // Modals & Drawer State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Buka modal cetak PDF: Pastikan mengambil seluruh data sesuai filter aktif
+  const [pdfItems, setPdfItems] = useState([]);
+
+  const handleOpenPdf = async () => {
+    if (isServer) {
+      setLoading(true);
+      try {
+        const res = await api.getPembelianServer({
+          page: 1,
+          limit: 10000,
+          search,
+          status: statusFilter,
+          kategori: kategoriFilter,
+          peruntukan: peruntukanFilter,
+          bulan: bulanFilter
+        });
+        setPdfItems(res?.data || []);
+      } catch (e) {
+        setPdfItems(pembelian);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setPdfItems(filteredItems);
+    }
+    setIsPdfOpen(true);
+  };
   const [selectedItem, setSelectedItem] = useState(null);
   const [isMasterOpen, setIsMasterOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
@@ -413,9 +438,9 @@ export default function App() {
 
             {/* Tombol Cetak / PDF Laporan */}
             <button
-              onClick={() => setIsPdfOpen(true)}
+              onClick={handleOpenPdf}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3.5 py-2 rounded-xl transition cursor-pointer border border-slate-200/80 shadow-2xs"
-              title="Cetak atau Simpan Laporan PDF dengan Rincian Mingguan"
+              title="Cetak atau Simpan Laporan PDF Sesuai Filter Aktif"
             >
               <Printer className="w-4 h-4 text-slate-600" />
               <span className="hidden sm:inline">Cetak PDF</span>
@@ -525,19 +550,20 @@ export default function App() {
         onOpenMaster={() => setIsMasterOpen(true)}
         onOpenBackupRestore={() => setIsBackupOpen(true)}
         onExportCSV={handleExportCSV}
-        onOpenPdf={() => setIsPdfOpen(true)}
+        onOpenPdf={handleOpenPdf}
       />
 
       {/* Modal Cetak & Ekspor PDF */}
       <LaporanPdfModal
         isOpen={isPdfOpen}
         onClose={() => setIsPdfOpen(false)}
-        items={isServer ? pembelian : filteredItems}
+        items={pdfItems}
         filterInfo={{
           bulan: bulanFilter,
           peruntukan: peruntukanFilter,
           kategori: kategoriFilter,
-          status: statusFilter
+          status: statusFilter,
+          search: search
         }}
       />
     </div>
