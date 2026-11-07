@@ -86,11 +86,8 @@ export default function TabelTransaksi({
                 <tr key={item.id} className="hover:bg-slate-50/60 transition group">
                   {/* Tanggal Terpisah di Depan */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="font-semibold text-slate-900 text-xs block">
+                    <span className="font-semibold text-slate-800 text-xs">
                       {formatTanggal(item.tanggal)}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {item.tanggal || '-'}
                     </span>
                   </td>
 
