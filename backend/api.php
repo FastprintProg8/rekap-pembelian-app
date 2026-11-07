@@ -233,6 +233,7 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
     $status = trim(isset($_GET['status']) ? $_GET['status'] : '');
     $peruntukan = trim(isset($_GET['peruntukan']) ? $_GET['peruntukan'] : '');
     $bulan = trim(isset($_GET['bulan']) ? $_GET['bulan'] : '');
+    $kategori = trim(isset($_GET['kategori']) ? $_GET['kategori'] : '');
 
     // 1. Hitung ringkasan stats kartu (belum, diproses, dibayar)
     $stats = [
@@ -258,6 +259,10 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
     $where = [];
     $params = [];
 
+    if ($kategori !== '') {
+        $where[] = "p.kategori = :kategori";
+        $params[':kategori'] = $kategori;
+    }
     if ($status !== '') {
         $where[] = "p.status = :status";
         $params[':status'] = $status;
@@ -386,14 +391,14 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         if ($dbDriver === 'mysql') {
             $sql = "
                 INSERT INTO pembelian (
-                  id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
+                  id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
                   metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
                 ) VALUES (
-                  :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
+                  :id, :kategori, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
                   :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
                 )
                 ON DUPLICATE KEY UPDATE
-                  tanggal=VALUES(tanggal), toko=VALUES(toko), platform=VALUES(platform),
+                  kategori=VALUES(kategori), tanggal=VALUES(tanggal), toko=VALUES(toko), platform=VALUES(platform),
                   noPesanan=VALUES(noPesanan), peruntukan=VALUES(peruntukan), diskon=VALUES(diskon),
                   ongkir=VALUES(ongkir), biaya=VALUES(biaya), totalNota=VALUES(totalNota),
                   metode=VALUES(metode), akun=VALUES(akun), status=VALUES(status),
@@ -403,14 +408,14 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         } else {
             $sql = "
                 INSERT INTO pembelian (
-                  id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
+                  id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
                   metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
                 ) VALUES (
-                  :id, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
+                  :id, :kategori, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
                   :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
                 )
                 ON CONFLICT(id) DO UPDATE SET
-                  tanggal=excluded.tanggal, toko=excluded.toko, platform=excluded.platform,
+                  kategori=excluded.kategori, tanggal=excluded.tanggal, toko=excluded.toko, platform=excluded.platform,
                   noPesanan=excluded.noPesanan, peruntukan=excluded.peruntukan, diskon=excluded.diskon,
                   ongkir=excluded.ongkir, biaya=excluded.biaya, totalNota=excluded.totalNota,
                   metode=excluded.metode, akun=excluded.akun, status=excluded.status,
@@ -425,10 +430,12 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         $tglVal = arrGet($p, 'tanggal', '');
         $tglProsesVal = arrGet($p, 'tglProses', '');
         $tglBayarVal = arrGet($p, 'tglBayar', '');
+        $kategoriVal = arrGet($p, 'kategori', 'barang');
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':id' => $p['id'],
+            ':kategori' => $kategoriVal,
             ':tanggal' => !empty($tglVal) ? $tglVal : null,
             ':toko' => arrGet($p, 'toko', ''),
             ':platform' => arrGet($p, 'platform', ''),

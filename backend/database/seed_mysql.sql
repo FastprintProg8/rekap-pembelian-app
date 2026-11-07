@@ -27,6 +27,7 @@ INSERT INTO `master_config` (`key`, `value`) VALUES ('metode', '["Kartu kredit",
 -- ----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `pembelian` (
   `id` VARCHAR(50) NOT NULL,
+  `kategori` VARCHAR(50) DEFAULT 'barang',
   `tanggal` DATE NULL,
   `toko` VARCHAR(255) NULL,
   `platform` VARCHAR(100) NULL,

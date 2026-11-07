@@ -24,6 +24,7 @@ export default function App() {
   // Filters & State
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [kategoriFilter, setKategoriFilter] = useState('');
   const [peruntukanFilter, setPeruntukanFilter] = useState('');
   const [bulanFilter, setBulanFilter] = useState('');
 
@@ -87,6 +88,7 @@ export default function App() {
       limit: 20,
       search,
       status: statusFilter,
+      kategori: kategoriFilter,
       peruntukan: peruntukanFilter,
       bulan: bulanFilter
     });
@@ -108,7 +110,7 @@ export default function App() {
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [search, statusFilter, peruntukanFilter, bulanFilter, isServer]);
+  }, [search, statusFilter, kategoriFilter, peruntukanFilter, bulanFilter, isServer]);
 
   // Save Item
   const handleSaveItem = async (itemData) => {
@@ -224,6 +226,7 @@ export default function App() {
   // Filtered Items
   const filteredItems = pembelian.filter(item => {
     if (statusFilter && item.status !== statusFilter) return false;
+    if (kategoriFilter && (item.kategori || 'barang') !== kategoriFilter) return false;
     if (peruntukanFilter && item.peruntukan !== peruntukanFilter) return false;
     if (bulanFilter && (!item.tanggal || !item.tanggal.startsWith(bulanFilter))) return false;
     if (search) {
@@ -320,12 +323,14 @@ export default function App() {
         <FilterBar
           search={search}
           setSearch={setSearch}
+          kategori={kategoriFilter}
+          setKategori={setKategoriFilter}
           peruntukan={peruntukanFilter}
           setPeruntukan={setPeruntukanFilter}
           bulan={bulanFilter}
           setBulan={setBulanFilter}
           masterPeruntukan={master.peruntukan || []}
-          onReset={() => { setSearch(''); setPeruntukanFilter(''); setBulanFilter(''); setStatusFilter(''); }}
+          onReset={() => { setSearch(''); setKategoriFilter(''); setPeruntukanFilter(''); setBulanFilter(''); setStatusFilter(''); }}
         />
 
         {/* Tabel Rekap */}

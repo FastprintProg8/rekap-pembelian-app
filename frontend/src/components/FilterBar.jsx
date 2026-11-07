@@ -3,12 +3,13 @@ import { Search, Filter, X } from 'lucide-react';
 
 export default function FilterBar({
   search, setSearch,
+  kategori, setKategori,
   peruntukan, setPeruntukan,
   bulan, setBulan,
   masterPeruntukan = [],
   onReset
 }) {
-  const hasFilter = search || peruntukan || bulan;
+  const hasFilter = search || kategori || peruntukan || bulan;
 
   return (
     <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm mb-6 flex flex-wrap gap-3 items-center justify-between">
@@ -32,6 +33,17 @@ export default function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {/* Filter Tipe Transaksi */}
+        <select
+          value={kategori}
+          onChange={e => setKategori(e.target.value)}
+          className="text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer"
+        >
+          <option value="">Semua Tipe Transaksi</option>
+          <option value="barang">📦 Pembelian Barang</option>
+          <option value="gaji">💼 Gaji / Upah Karyawan</option>
+        </select>
+
         {/* Filter Peruntukan */}
         <select
           value={peruntukan}

@@ -16,6 +16,7 @@ export default function FormPembelianModal({
 }) {
   const [formData, setFormData] = useState({
     id: '',
+    kategori: 'barang', // 'barang' | 'gaji'
     tanggal: new Date().toISOString().split('T')[0],
     toko: '',
     platform: 'Tokopedia',
@@ -50,6 +51,7 @@ export default function FormPembelianModal({
 
       setFormData({
         ...initialData,
+        kategori: initialData.kategori || 'barang',
         diskon: initialData.diskon || 0,
         ongkir: initialData.ongkir || 0,
         biaya: initialData.biaya || 0,
@@ -64,7 +66,10 @@ export default function FormPembelianModal({
         if (savedDraft) {
           const parsed = JSON.parse(savedDraft);
           if (parsed && typeof parsed === 'object') {
-            setFormData(parsed);
+            setFormData({
+              ...parsed,
+              kategori: parsed.kategori || 'barang'
+            });
             restoredFromDraft = true;
           }
         }
@@ -73,6 +78,7 @@ export default function FormPembelianModal({
       if (!restoredFromDraft) {
         setFormData({
           id: generateId(),
+          kategori: 'barang',
           tanggal: new Date().toISOString().split('T')[0],
           toko: '',
           platform: master.platform?.[0] || 'Tokopedia',
@@ -151,6 +157,7 @@ export default function FormPembelianModal({
           // Auto-fill dari AI
           setFormData(prev => ({
             ...prev,
+            kategori: result.kategori || prev.kategori || 'barang',
             toko: result.toko || prev.toko,
             platform: result.platform || prev.platform,
             tanggal: result.tanggal || prev.tanggal,
@@ -165,7 +172,7 @@ export default function FormPembelianModal({
                 id: String(idx + 1),
                 nama: it.nama,
                 qty: it.qty || 1,
-                satuan: it.satuan || 'pcs',
+                satuan: it.satuan || (result.kategori === 'gaji' ? 'org' : 'pcs'),
                 hargaSatuan: it.harga_satuan || 0
               }))
               : prev.items
@@ -251,12 +258,43 @@ export default function FormPembelianModal({
         {/* Scrollable Form Body */}
         <form id="formPembelian" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
 
+          {/* Tipe Transaksi: Pembelian Barang vs Gaji Karyawan */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Tipe Pengeluaran / Transaksi:
+            </span>
+            <div className="inline-flex p-1 bg-slate-200/70 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, kategori: 'barang' }))}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  formData.kategori === 'barang'
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📦 Pembelian Barang
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, kategori: 'gaji' }))}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  formData.kategori === 'gaji'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                💼 Gaji / Upah Karyawan
+              </button>
+            </div>
+          </div>
+
           {/* Section 1: Upload Foto & AI Scan */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-teal-600" />
-                Foto Nota / Bukti Pembelian
+                {formData.kategori === 'gaji' ? 'Foto Slip / Bukti Transfer Gaji' : 'Foto Nota / Bukti Pembelian'}
               </span>
               {aiActive && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full">
@@ -304,7 +342,9 @@ export default function FormPembelianModal({
           {/* Section 2: Info Dasar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Nota</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {formData.kategori === 'gaji' ? 'Tanggal Pembayaran / Slip' : 'Tanggal Nota'}
+              </label>
               <input
                 type="date"
                 required
@@ -314,11 +354,13 @@ export default function FormPembelianModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Toko</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {formData.kategori === 'gaji' ? 'Karyawan / Bagian' : 'Nama Toko'}
+              </label>
               <input
                 type="text"
                 required
-                placeholder="Contoh: Toko Jaya Abadi"
+                placeholder={formData.kategori === 'gaji' ? 'Contoh: Nanang / Tim Finishing' : 'Contoh: Toko Jaya Abadi'}
                 value={formData.toko}
                 onChange={e => setFormData({ ...formData, toko: e.target.value })}
                 className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
@@ -337,22 +379,35 @@ export default function FormPembelianModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Tempat Beli</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {formData.kategori === 'gaji' ? 'Kategori Gaji / Kanal' : 'Tempat Beli'}
+              </label>
               <select
                 value={formData.platform}
                 onChange={e => setFormData({ ...formData, platform: e.target.value })}
                 className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               >
+                {formData.kategori === 'gaji' && (
+                  <>
+                    <option value="Gaji Pokok">Gaji Pokok</option>
+                    <option value="Upah Borongan">Upah Borongan</option>
+                    <option value="Upah Harian">Upah Harian</option>
+                    <option value="Lembur">Lembur</option>
+                    <option value="Insentif / Bonus">Insentif / Bonus</option>
+                  </>
+                )}
                 {master.platform?.map(p => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor Pesanan / Invoice</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {formData.kategori === 'gaji' ? 'No. Referensi / Bukti Transfer' : 'Nomor Pesanan / Invoice'}
+              </label>
               <input
                 type="text"
-                placeholder="INV/2026/..."
+                placeholder={formData.kategori === 'gaji' ? 'No. Referensi TF...' : 'INV/2026/...'}
                 value={formData.noPesanan}
                 onChange={e => setFormData({ ...formData, noPesanan: e.target.value })}
                 className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
@@ -360,16 +415,18 @@ export default function FormPembelianModal({
             </div>
           </div>
 
-          {/* Section 3: Rincian Barang Dinamis */}
+          {/* Section 3: Rincian Barang / Gaji Dinamis */}
           <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Barang</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                {formData.kategori === 'gaji' ? 'Rincian Gaji / Upah Karyawan' : 'Rincian Barang'}
+              </span>
               <button
                 type="button"
                 onClick={addItem}
                 className="text-xs font-semibold text-teal-700 hover:text-teal-800 flex items-center gap-1 hover:bg-teal-50 px-2 py-1 rounded transition cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> Tambah Barang
+                <Plus className="w-3.5 h-3.5" /> {formData.kategori === 'gaji' ? 'Tambah Rincian Upah' : 'Tambah Barang'}
               </button>
             </div>
 
@@ -379,7 +436,7 @@ export default function FormPembelianModal({
                   <input
                     type="text"
                     required
-                    placeholder="Nama barang..."
+                    placeholder={formData.kategori === 'gaji' ? 'Nama karyawan / pos upah...' : 'Nama barang...'}
                     value={it.nama}
                     onChange={e => handleItemChange(idx, 'nama', e.target.value)}
                     className="flex-1 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
@@ -395,7 +452,7 @@ export default function FormPembelianModal({
                   />
                   <input
                     type="text"
-                    placeholder="Satuan"
+                    placeholder={formData.kategori === 'gaji' ? 'org/hr' : 'Satuan'}
                     value={it.satuan}
                     onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
                     className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
@@ -403,7 +460,7 @@ export default function FormPembelianModal({
                   <input
                     type="number"
                     min="0"
-                    placeholder="Harga Satuan"
+                    placeholder={formData.kategori === 'gaji' ? 'Nominal Upah' : 'Harga Satuan'}
                     value={it.hargaSatuan}
                     onChange={e => handleItemChange(idx, 'hargaSatuan', e.target.value)}
                     className="w-28 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-right"

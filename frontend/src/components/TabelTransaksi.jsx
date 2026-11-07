@@ -77,7 +77,18 @@ export default function TabelTransaksi({
                 <tr key={item.id} className="hover:bg-slate-50/60 transition group">
                   {/* Tanggal & Toko */}
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-slate-900">{item.toko || 'Toko Tanpa Nama'}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-slate-900">{item.toko || 'Toko Tanpa Nama'}</div>
+                      {item.kategori === 'gaji' ? (
+                        <span className="inline-flex items-center text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded">
+                          💼 Gaji
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
+                          📦 Barang
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                       <span>{formatTanggal(item.tanggal)}</span>
                       {item.platform && <span className="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[11px]">{item.platform}</span>}

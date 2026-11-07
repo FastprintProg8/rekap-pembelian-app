@@ -83,6 +83,7 @@ $schema = [
     ],
     'pembelian' => [
         'id' => $driver === 'mysql' ? 'VARCHAR(50) NOT NULL PRIMARY KEY' : 'TEXT PRIMARY KEY',
+        'kategori' => $driver === 'mysql' ? "VARCHAR(50) DEFAULT 'barang'" : "TEXT DEFAULT 'barang'",
         'tanggal' => $driver === 'mysql' ? 'VARCHAR(50) NULL' : 'TEXT',
         'toko' => $driver === 'mysql' ? 'VARCHAR(255) NULL' : 'TEXT',
         'platform' => $driver === 'mysql' ? 'VARCHAR(100) NULL' : 'TEXT',

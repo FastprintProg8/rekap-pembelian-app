@@ -216,10 +216,11 @@ function savePembelianRecord(p) {
   const savedBuktiBayar = saveBase64Image(p.buktiBayar, 'bukti');
   const insertPembelian = db.prepare(`
     INSERT INTO pembelian (
-      id, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
+      id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
       metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
+      kategori=excluded.kategori,
       tanggal=excluded.tanggal,
       toko=excluded.toko,
       platform=excluded.platform,
@@ -242,6 +243,7 @@ function savePembelianRecord(p) {
 
   insertPembelian.run(
     p.id,
+    p.kategori || 'barang',
     p.tanggal || '',
     p.toko || '',
     p.platform || '',
@@ -349,9 +351,11 @@ const server = http.createServer((req, res) => {
     const status = (url.searchParams.get('status') || '').trim();
     const peruntukan = (url.searchParams.get('peruntukan') || '').trim();
     const bulan = (url.searchParams.get('bulan') || '').trim();
+    const kategori = (url.searchParams.get('kategori') || '').trim();
 
     const all = getAllPembelian();
     const filtered = all.filter(p => {
+      if (kategori && p.kategori !== kategori) return false;
       if (status && p.status !== status) return false;
       if (peruntukan && p.peruntukan !== peruntukan) return false;
       if (bulan && (!p.tanggal || !p.tanggal.startsWith(bulan))) return false;
