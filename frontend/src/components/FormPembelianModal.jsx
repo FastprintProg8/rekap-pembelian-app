@@ -123,9 +123,10 @@ export default function FormPembelianModal({
   };
 
   const addItem = () => {
+    const defaultSatuan = formData.kategori === 'gaji' ? 'hari' : 'pcs';
     setFormData({
       ...formData,
-      items: [...formData.items, { id: Date.now().toString(), nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
+      items: [...formData.items, { id: Date.now().toString(), nama: '', qty: 1, satuan: defaultSatuan, hargaSatuan: 0 }]
     });
   };
 
@@ -266,7 +267,14 @@ export default function FormPembelianModal({
             <div className="inline-flex p-1 bg-slate-200/70 rounded-xl">
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, kategori: 'barang' }))}
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  kategori: 'barang',
+                  items: prev.items.map(it => ({
+                    ...it,
+                    satuan: (it.satuan === 'hari' || it.satuan === 'bulan' || it.satuan === 'hr' || it.satuan === 'bln') ? 'pcs' : it.satuan
+                  }))
+                }))}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                   formData.kategori === 'barang'
                     ? 'bg-teal-700 text-white shadow-xs'
@@ -277,7 +285,14 @@ export default function FormPembelianModal({
               </button>
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, kategori: 'gaji' }))}
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  kategori: 'gaji',
+                  items: prev.items.map(it => ({
+                    ...it,
+                    satuan: (it.satuan === 'pcs' || !it.satuan) ? 'hari' : it.satuan
+                  }))
+                }))}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
                   formData.kategori === 'gaji'
                     ? 'bg-indigo-600 text-white shadow-xs'
@@ -450,13 +465,28 @@ export default function FormPembelianModal({
                     onChange={e => handleItemChange(idx, 'qty', e.target.value)}
                     className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
-                  <input
-                    type="text"
-                    placeholder={formData.kategori === 'gaji' ? 'org/hr' : 'Satuan'}
-                    value={it.satuan}
-                    onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
-                    className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+                  {formData.kategori === 'gaji' ? (
+                    <select
+                      value={it.satuan || 'hari'}
+                      onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                      className="w-20 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                    >
+                      <option value="hari">hari</option>
+                      <option value="bulan">bulan</option>
+                      <option value="minggu">minggu</option>
+                      <option value="jam">jam</option>
+                      <option value="borongan">borongan</option>
+                      <option value="orang">orang</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Satuan"
+                      value={it.satuan}
+                      onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                      className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  )}
                   <input
                     type="number"
                     min="0"
