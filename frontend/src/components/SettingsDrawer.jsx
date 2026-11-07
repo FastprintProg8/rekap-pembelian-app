@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, FileSpreadsheet, Database, Settings, KeyRound, MessageSquare } from 'lucide-react';
+import { X, Copy, Check, FileSpreadsheet, Database, Settings, KeyRound, MessageSquare, Printer } from 'lucide-react';
 import { formatRupiah, formatTanggal } from '../utils/formatters';
 
 export default function SettingsDrawer({
@@ -13,7 +13,8 @@ export default function SettingsDrawer({
   onSaveAiKey,
   onOpenMaster,
   onOpenBackupRestore,
-  onExportCSV
+  onExportCSV,
+  onOpenPdf
 }) {
   const [copied, setCopied] = useState(false);
   const [keyInput, setKeyInput] = useState(aiApiKey || '');
@@ -176,6 +177,22 @@ export default function SettingsDrawer({
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Peralatan Data</h3>
             
+            {/* Cetak / Ekspor PDF */}
+            <button
+              onClick={() => { onClose(); onOpenPdf(); }}
+              className="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/30 transition flex items-center justify-between group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-slate-100 text-slate-600 group-hover:bg-teal-100 group-hover:text-teal-700">
+                  <Printer className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-800">Cetak & Ekspor Laporan PDF</div>
+                  <div className="text-[11px] text-slate-500">Rekap mingguan & rincian pembayaran siap cetak</div>
+                </div>
+              </div>
+            </button>
+
             {/* Export CSV */}
             <button
               onClick={() => { onClose(); onExportCSV(); }}

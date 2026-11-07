@@ -6,8 +6,9 @@ import FormPembelianModal from './components/FormPembelianModal';
 import MasterDataModal from './components/MasterDataModal';
 import BackupRestoreModal from './components/BackupRestoreModal';
 import SettingsDrawer from './components/SettingsDrawer';
+import LaporanPdfModal from './components/LaporanPdfModal';
 import { api, DEFAULT_MASTER } from './services/api';
-import { Plus, Sparkles, Smartphone, Menu, RefreshCw, Settings } from 'lucide-react';
+import { Plus, Sparkles, Smartphone, Menu, RefreshCw, Settings, Printer } from 'lucide-react';
 
 export default function App() {
   const [pembelian, setPembelian] = useState([]);
@@ -39,6 +40,7 @@ export default function App() {
   const [isMasterOpen, setIsMasterOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPdfOpen, setIsPdfOpen] = useState(false);
 
   // Load Initial Data & PWA Listener
   useEffect(() => {
@@ -409,6 +411,16 @@ export default function App() {
               <span>Data Master</span>
             </button>
 
+            {/* Tombol Cetak / PDF Laporan */}
+            <button
+              onClick={() => setIsPdfOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3.5 py-2 rounded-xl transition cursor-pointer border border-slate-200/80 shadow-2xs"
+              title="Cetak atau Simpan Laporan PDF dengan Rincian Mingguan"
+            >
+              <Printer className="w-4 h-4 text-slate-600" />
+              <span className="hidden sm:inline">Cetak PDF</span>
+            </button>
+
             {/* Tombol Menu & Pengaturan */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -513,6 +525,20 @@ export default function App() {
         onOpenMaster={() => setIsMasterOpen(true)}
         onOpenBackupRestore={() => setIsBackupOpen(true)}
         onExportCSV={handleExportCSV}
+        onOpenPdf={() => setIsPdfOpen(true)}
+      />
+
+      {/* Modal Cetak & Ekspor PDF */}
+      <LaporanPdfModal
+        isOpen={isPdfOpen}
+        onClose={() => setIsPdfOpen(false)}
+        items={isServer ? pembelian : filteredItems}
+        filterInfo={{
+          bulan: bulanFilter,
+          peruntukan: peruntukanFilter,
+          kategori: kategoriFilter,
+          status: statusFilter
+        }}
       />
     </div>
   );
