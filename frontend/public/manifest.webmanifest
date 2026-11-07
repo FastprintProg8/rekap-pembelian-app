@@ -1,7 +1,7 @@
 {
-  "name": "Rekap Pembelian Sistem",
-  "short_name": "Rekap Beli",
-  "description": "Catat nota pembelian, sumber dana, dan status pembayaran.",
+  "name": "SISTEM REKAP KOST G23",
+  "short_name": "Kost G23",
+  "description": "Catat nota pembelian, sumber dana, dan status pembayaran Kost G23.",
   "lang": "id",
   "start_url": "./",
   "scope": "./",

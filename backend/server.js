@@ -369,7 +369,24 @@ const server = http.createServer((req, res) => {
       return true;
     });
 
+    // Urutkan: belum selesai bayar (belum, diproses) ditaruh di atas, lalu tanggal terbaru
+    filtered.sort((a, b) => {
+      const getPriority = (st) => (st === 'belum' ? 1 : st === 'diproses' ? 2 : 3);
+      const prioA = getPriority(a.status || 'belum');
+      const prioB = getPriority(b.status || 'belum');
+      if (prioA !== prioB) return prioA - prioB;
+      const tA = a.tanggal || '';
+      const tB = b.tanggal || '';
+      if (tA !== tB) return tB.localeCompare(tA);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
     const total = filtered.length;
+    const totalNominal = filtered.reduce((acc, p) => {
+      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((sum, it) => sum + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) + Number(p.ongkir || 0) + Number(p.biaya || 0));
+      return acc + tot;
+    }, 0);
+
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const offset = (page - 1) * limit;
     const paged = filtered.slice(offset, offset + limit);
@@ -391,7 +408,7 @@ const server = http.createServer((req, res) => {
 
     return sendJSON({
       data: paged,
-      pagination: { page, limit, total, totalPages },
+      pagination: { page, limit, total, totalPages, totalNominal },
       stats,
       isServer: true
     });

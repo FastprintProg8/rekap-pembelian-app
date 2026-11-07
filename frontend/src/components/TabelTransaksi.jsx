@@ -43,6 +43,14 @@ export default function TabelTransaksi({
     if (!isServerSide) setCurrentPage(1);
   }, [items.length, isServerSide]);
 
+  // Hitung total keseluruhan nominal dalam periode/filter yang dipilih
+  const grandTotal = isServerSide && pagination?.totalNominal != null
+    ? pagination.totalNominal
+    : items.reduce((acc, item) => acc + Number(item.totalNota ?? item.totalHitungan ?? 0), 0);
+
+  // Subtotal untuk data yang tampil di halaman aktif saat ini
+  const pageSubtotal = currentItems.reduce((acc, item) => acc + Number(item.totalNota ?? item.totalHitungan ?? 0), 0);
+
   if (items.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
@@ -58,9 +66,10 @@ export default function TabelTransaksi({
         <table className="w-full text-left border-collapse text-sm">
           <thead className="sticky top-0 z-20 shadow-xs">
             <tr className="bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wider uppercase">
-              <th className="py-3 px-4">Tanggal / Toko</th>
+              <th className="py-3 px-4 w-32">Tanggal</th>
+              <th className="py-3 px-4">Toko / Penerima</th>
               <th className="py-3 px-4">Peruntukan</th>
-              <th className="py-3 px-4">Item Barang</th>
+              <th className="py-3 px-4">Rincian Barang / Upah</th>
               <th className="py-3 px-4 text-right">Total Nota</th>
               <th className="py-3 px-4">Status & Pembayaran</th>
               <th className="py-3 px-4 text-center">Nota & Bukti</th>
@@ -75,10 +84,20 @@ export default function TabelTransaksi({
 
               return (
                 <tr key={item.id} className="hover:bg-slate-50/60 transition group">
-                  {/* Tanggal & Toko */}
+                  {/* Tanggal Terpisah di Depan */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="font-semibold text-slate-900 text-xs block">
+                      {formatTanggal(item.tanggal)}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {item.tanggal || '-'}
+                    </span>
+                  </td>
+
+                  {/* Toko / Penerima */}
                   <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="font-semibold text-slate-900">{item.toko || 'Toko Tanpa Nama'}</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-slate-900">{item.toko || 'Toko Tanpa Nama'}</span>
                       {item.kategori === 'gaji' ? (
                         <span className="inline-flex items-center text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded">
                           💼 Gaji
@@ -90,7 +109,6 @@ export default function TabelTransaksi({
                       )}
                     </div>
                     <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                      <span>{formatTanggal(item.tanggal)}</span>
                       {item.platform && <span className="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[11px]">{item.platform}</span>}
                     </div>
                     {item.noPesanan && (
@@ -219,6 +237,32 @@ export default function TabelTransaksi({
               );
             })}
           </tbody>
+          {/* Sticky TFOOT untuk Total Keseluruhan dalam Periode Tersebut */}
+          <tfoot className="sticky bottom-0 z-20 shadow-xs border-t-2 border-slate-300">
+            {/* Subtotal Halaman jika lebih dari 1 halaman */}
+            {totalPages > 1 && (
+              <tr className="bg-slate-100/95 backdrop-blur-xs text-xs text-slate-600 font-medium">
+                <td colSpan={4} className="py-2 px-4 text-right">
+                  Subtotal Halaman Ini ({currentItems.length} transaksi):
+                </td>
+                <td className="py-2 px-4 text-right font-semibold text-slate-800">
+                  {formatRupiah(pageSubtotal)}
+                </td>
+                <td colSpan={3}></td>
+              </tr>
+            )}
+            <tr className="bg-slate-200/95 backdrop-blur-xs text-slate-900 font-bold text-xs uppercase tracking-wider">
+              <td colSpan={4} className="py-3 px-4 text-right text-slate-800">
+                TOTAL KESELURUHAN PERIODE INI ({totalCount} TRANSAKSI):
+              </td>
+              <td className="py-3 px-4 text-right text-sm text-teal-800 font-black">
+                {formatRupiah(grandTotal)}
+              </td>
+              <td colSpan={3} className="py-3 px-4 text-xs text-slate-500 font-normal normal-case">
+                (Sesuai filter yang dipilih)
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 

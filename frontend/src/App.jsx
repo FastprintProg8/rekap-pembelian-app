@@ -223,21 +223,33 @@ export default function App() {
     a.click();
   };
 
-  // Filtered Items
-  const filteredItems = pembelian.filter(item => {
-    if (statusFilter && item.status !== statusFilter) return false;
-    if (kategoriFilter && (item.kategori || 'barang') !== kategoriFilter) return false;
-    if (peruntukanFilter && item.peruntukan !== peruntukanFilter) return false;
-    if (bulanFilter && (!item.tanggal || !item.tanggal.startsWith(bulanFilter))) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      const matchToko = (item.toko || '').toLowerCase().includes(q);
-      const matchNo = (item.noPesanan || '').toLowerCase().includes(q);
-      const matchBarang = (item.items || []).some(it => (it.nama || '').toLowerCase().includes(q));
-      if (!matchToko && !matchNo && !matchBarang) return false;
-    }
-    return true;
-  });
+  // Filtered Items (client-side fallback / local mode)
+  const filteredItems = pembelian
+    .filter(item => {
+      if (statusFilter && item.status !== statusFilter) return false;
+      if (kategoriFilter && (item.kategori || 'barang') !== kategoriFilter) return false;
+      if (peruntukanFilter && item.peruntukan !== peruntukanFilter) return false;
+      if (bulanFilter && (!item.tanggal || !item.tanggal.startsWith(bulanFilter))) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const matchToko = (item.toko || '').toLowerCase().includes(q);
+        const matchNo = (item.noPesanan || '').toLowerCase().includes(q);
+        const matchBarang = (item.items || []).some(it => (it.nama || '').toLowerCase().includes(q));
+        if (!matchToko && !matchNo && !matchBarang) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Prioritaskan yang belum lunas (belum, diproses) di atas
+      const getPriority = (st) => (st === 'belum' ? 1 : st === 'diproses' ? 2 : 3);
+      const prioA = getPriority(a.status || 'belum');
+      const prioB = getPriority(b.status || 'belum');
+      if (prioA !== prioB) return prioA - prioB;
+      const tA = a.tanggal || '';
+      const tB = b.tanggal || '';
+      if (tA !== tB) return tB.localeCompare(tA);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
 
   return (
     <div className="min-h-screen pb-16">
@@ -246,10 +258,10 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-              R
+              G23
             </div>
             <div>
-              <h1 className="text-base font-bold text-slate-900 leading-tight">Rekap Pembelian Sistem</h1>
+              <h1 className="text-base font-bold text-slate-900 leading-tight">SISTEM REKAP KOST G23</h1>
               <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
                 <span>{isServer ? 'Tersambung ke Server' : 'Mode Offline'}</span>
                 {aiActive ? (

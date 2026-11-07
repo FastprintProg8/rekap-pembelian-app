@@ -284,13 +284,17 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
 
     $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-    // Hitung total baris yang cocok
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM pembelian p $whereSql");
+    // Hitung total baris yang cocok dan total nominal periode terpilih
+    $countStmt = $pdo->prepare("SELECT COUNT(*), SUM(COALESCE(totalNota, 0)) FROM pembelian p $whereSql");
     $countStmt->execute($params);
-    $totalRows = intval($countStmt->fetchColumn());
+    $rowAgg = $countStmt->fetch(PDO::FETCH_NUM);
+    $totalRows = intval($rowAgg[0]);
+    $totalNominalPeriode = floatval($rowAgg[1]);
 
     // Ambil baris dengan LIMIT & OFFSET
-    $listSql = "SELECT p.* FROM pembelian p $whereSql ORDER BY p.tanggal DESC, p.createdAt DESC LIMIT $limit OFFSET $offset";
+    // Prioritaskan yang belum/diproses (belum selesai dibayar) ditaruh paling atas
+    $orderSql = "CASE WHEN p.status = 'belum' THEN 1 WHEN p.status = 'diproses' THEN 2 ELSE 3 END ASC, p.tanggal DESC, p.createdAt DESC";
+    $listSql = "SELECT p.* FROM pembelian p $whereSql ORDER BY $orderSql LIMIT $limit OFFSET $offset";
     $listStmt = $pdo->prepare($listSql);
     $listStmt->execute($params);
     $pembelian = $listStmt->fetchAll();
@@ -330,7 +334,8 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
             'page' => $page,
             'limit' => $limit,
             'total' => $totalRows,
-            'totalPages' => ceil($totalRows / $limit)
+            'totalPages' => ceil($totalRows / $limit),
+            'totalNominal' => $totalNominalPeriode
         ],
         'stats' => $stats
     ]);
