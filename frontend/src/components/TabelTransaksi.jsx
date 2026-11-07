@@ -238,29 +238,15 @@ export default function TabelTransaksi({
             })}
           </tbody>
           {/* Sticky TFOOT untuk Total Keseluruhan dalam Periode Tersebut */}
-          <tfoot className="sticky bottom-0 z-20 shadow-xs border-t-2 border-slate-300">
-            {/* Subtotal Halaman jika lebih dari 1 halaman */}
-            {totalPages > 1 && (
-              <tr className="bg-slate-100/95 backdrop-blur-xs text-xs text-slate-600 font-medium">
-                <td colSpan={4} className="py-2 px-4 text-right">
-                  Subtotal Halaman Ini ({currentItems.length} transaksi):
-                </td>
-                <td className="py-2 px-4 text-right font-semibold text-slate-800">
-                  {formatRupiah(pageSubtotal)}
-                </td>
-                <td colSpan={3}></td>
-              </tr>
-            )}
-            <tr className="bg-slate-200/95 backdrop-blur-xs text-slate-900 font-bold text-xs uppercase tracking-wider">
-              <td colSpan={4} className="py-3 px-4 text-right text-slate-800">
-                TOTAL KESELURUHAN PERIODE INI ({totalCount} TRANSAKSI):
+          <tfoot className="sticky bottom-0 z-20 shadow-xs border-t border-slate-300">
+            <tr className="bg-slate-100/95 backdrop-blur-xs text-slate-800 text-xs">
+              <td colSpan={4} className="py-2 px-4 text-right font-semibold">
+                Total Periode ({totalCount} trx):
               </td>
-              <td className="py-3 px-4 text-right text-sm text-teal-800 font-black">
+              <td className="py-2 px-4 text-right font-bold text-teal-800 text-xs whitespace-nowrap">
                 {formatRupiah(grandTotal)}
               </td>
-              <td colSpan={3} className="py-3 px-4 text-xs text-slate-500 font-normal normal-case">
-                (Sesuai filter yang dipilih)
-              </td>
+              <td colSpan={3} className="py-2 px-4"></td>
             </tr>
           </tfoot>
         </table>
