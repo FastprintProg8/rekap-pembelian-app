@@ -208,18 +208,127 @@ export default function App() {
     setMaster(restoredMaster);
   };
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (pembelian.length === 0) return alert('Tidak ada data untuk diexport.');
-    const headers = ['ID,Tanggal,Toko,Platform,No Pesanan,Peruntukan,Total Nota,Status,Sumber Dana,Tgl Bayar'];
-    const rows = filteredItems.map(p => 
-      `"${p.id}","${p.tanggal || ''}","${p.toko || ''}","${p.platform || ''}","${p.noPesanan || ''}","${p.peruntukan || ''}","${p.totalNota ?? p.totalHitungan ?? 0}","${p.status || ''}","${p.akun || ''}","${p.tglBayar || ''}"`
-    );
-    const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv;charset=utf-8;' });
+  // Export Excel (CSV dengan BOM UTF-8 agar rapi dibuka di Microsoft Excel)
+  const handleExportCSV = async () => {
+    let itemsToExport = [];
+
+    if (isServer) {
+      // Ambil seluruh data sesuai filter aktif tanpa batasan halaman (limit 10000)
+      setLoading(true);
+      try {
+        const res = await api.getPembelianServer({
+          page: 1,
+          limit: 10000,
+          search,
+          status: statusFilter,
+          kategori: kategoriFilter,
+          peruntukan: peruntukanFilter,
+          bulan: bulanFilter
+        });
+        itemsToExport = res?.data || [];
+      } catch (e) {
+        itemsToExport = pembelian;
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      itemsToExport = filteredItems;
+    }
+
+    if (itemsToExport.length === 0) return alert('Tidak ada data untuk diexport.');
+
+    // Urutkan seperti tampilan preview (prioritas belum bayar di atas, lalu tanggal terbaru)
+    const sorted = [...itemsToExport].sort((a, b) => {
+      const getPriority = (st) => (st === 'belum' ? 1 : st === 'diproses' ? 2 : 3);
+      const prioA = getPriority(a.status || 'belum');
+      const prioB = getPriority(b.status || 'belum');
+      if (prioA !== prioB) return prioA - prioB;
+      const tA = a.tanggal || '';
+      const tB = b.tanggal || '';
+      if (tA !== tB) return tB.localeCompare(tA);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
+    const escapeCsv = (str) => {
+      if (str == null) return '""';
+      const val = String(str).replace(/"/g, '""');
+      return `"${val}"`;
+    };
+
+    const headers = [
+      'Tanggal',
+      'Tipe Transaksi',
+      'Toko / Penerima',
+      'Tempat Beli / Kanal',
+      'No Pesanan / Referensi',
+      'Peruntukan',
+      'Rincian Barang / Upah',
+      'Total Nota',
+      'Status Pembayaran',
+      'Sumber Dana',
+      'Tanggal Lunas',
+      'Keterangan'
+    ].join(',');
+
+    let grandTotal = 0;
+    const rows = sorted.map(p => {
+      const totalAmount = Number(p.totalNota ?? p.totalHitungan ?? 0);
+      grandTotal += totalAmount;
+
+      const rincianStr = (p.items || []).map(it => {
+        const hrg = Number(it.hargaSatuan ?? it.harga ?? 0);
+        return `${it.nama || ''} (${it.qty || 1} ${it.satuan || ''} @ ${hrg})`;
+      }).join('; ');
+
+      const statusLabel = p.status === 'dibayar' 
+        ? 'Dibayar' 
+        : p.status === 'diproses' 
+        ? 'Diproses' 
+        : 'Belum diproses';
+
+      const tipeLabel = p.kategori === 'gaji' ? 'Gaji Karyawan' : 'Pembelian Barang';
+
+      return [
+        escapeCsv(p.tanggal),
+        escapeCsv(tipeLabel),
+        escapeCsv(p.toko),
+        escapeCsv(p.platform),
+        escapeCsv(p.noPesanan),
+        escapeCsv(p.peruntukan),
+        escapeCsv(rincianStr),
+        totalAmount,
+        escapeCsv(statusLabel),
+        escapeCsv(p.akun),
+        escapeCsv(p.tglBayar),
+        escapeCsv(p.keterangan)
+      ].join(',');
+    });
+
+    // Baris Total di bagian akhir (seperti tfoot pada tabel preview)
+    const totalRow = [
+      escapeCsv('TOTAL KESELURUHAN'),
+      '""',
+      '""',
+      '""',
+      '""',
+      '""',
+      escapeCsv(`${sorted.length} Transaksi`),
+      grandTotal,
+      '""',
+      '""',
+      '""',
+      '""'
+    ].join(',');
+
+    // Gunakan UTF-8 BOM (\uFEFF) agar Microsoft Excel langsung membaca karakter dan koma dengan tepat
+    const csvContent = '\uFEFF' + [headers, ...rows, totalRow].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rekap-pembelian-${new Date().toISOString().slice(0, 10)}.csv`;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filterTag = bulanFilter ? `-${bulanFilter}` : '';
+    a.download = `rekap-kost-g23${filterTag}-${dateStr}.csv`;
     a.click();
   };
 
