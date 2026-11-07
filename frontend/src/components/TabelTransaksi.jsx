@@ -78,13 +78,13 @@ export default function TabelTransaksi({
         <table className="w-full text-left border-collapse text-xs table-fixed">
           <thead className="sticky top-0 z-20 shadow-xs">
             <tr className="bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold text-[11px] tracking-wider uppercase">
-              <th className="py-2.5 px-3 w-[110px]">Tanggal</th>
-              <th className="py-2.5 px-3 w-[170px]">Toko / Penerima</th>
-              <th className="py-2.5 px-3 w-[80px]">Cabang</th>
-              <th className="py-2.5 px-3 min-w-[180px]">Rincian Barang / Upah</th>
+              <th className="py-2.5 px-3 w-[95px]">Tanggal</th>
+              <th className="py-2.5 px-3 w-[180px]">Toko / Penerima</th>
+              <th className="py-2.5 px-3 w-[75px]">Cabang</th>
+              <th className="py-2.5 px-3">Rincian Barang / Upah</th>
               <th className="py-2.5 px-3 text-right w-[110px]">Total Nota</th>
-              <th className="py-2.5 px-3 w-[145px]">Status Bayar</th>
-              <th className="py-2.5 px-2 text-center w-[75px]">Bukti</th>
+              <th className="py-2.5 px-3 w-[140px]">Status Bayar</th>
+              <th className="py-2.5 px-2 text-center w-[70px]">Bukti</th>
               <th className="py-2.5 px-2 text-right w-[65px]">Aksi</th>
             </tr>
           </thead>
@@ -106,20 +106,20 @@ export default function TabelTransaksi({
                   {/* Toko / Penerima */}
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-1 flex-wrap">
-                      <span className="font-semibold text-slate-900 truncate max-w-[110px]" title={item.toko}>
+                      <span className="font-semibold text-slate-900 break-words leading-tight">
                         {item.toko || 'Toko Tanpa Nama'}
                       </span>
                       {item.kategori === 'gaji' ? (
-                        <span className="inline-flex items-center text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 py-0.2 rounded">
+                        <span className="inline-flex items-center text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 py-0.2 rounded shrink-0">
                           Gaji
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.2 rounded">
+                        <span className="inline-flex items-center text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.2 rounded shrink-0">
                           Barang
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 flex-wrap">
                       {item.platform && <span className="bg-slate-100 text-slate-600 px-1 py-0.2 rounded text-[10px]">{item.platform}</span>}
                       {item.noPesanan && <span className="text-slate-400 font-mono">#{item.noPesanan}</span>}
                     </div>
@@ -134,10 +134,10 @@ export default function TabelTransaksi({
 
                   {/* Items Summary */}
                   <td className="py-2.5 px-3">
-                    <div className="text-[11px] text-slate-800 font-medium truncate" title={itemsList.map(it => `${it.nama} (${it.qty} ${it.satuan || ''})`).join(', ')}>
+                    <div className="text-[11px] text-slate-800 font-medium break-words leading-relaxed">
                       {itemsList.length > 0 ? itemsList.map(it => `${it.nama} (${it.qty} ${it.satuan || ''})`).join(', ') : '-'}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-[10px] text-slate-400 mt-0.5">
                       {itemsList.length} macam
                     </div>
                   </td>
