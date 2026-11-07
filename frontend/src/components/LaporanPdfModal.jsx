@@ -29,21 +29,37 @@ export default function LaporanPdfModal({
   let totalBelumLunas = 0;
   let totalLunas = 0;
 
-  // Pengelompokan mingguan (Weekly Grouping)
-  // Menghitung minggu ke berapa dalam bulan/tahun
-  const getWeekKey = (dateStr) => {
-    if (!dateStr) return 'Lainnya';
+  // Pengelompokan Rentang 7 Hari yang Jelas (Senin - Minggu atau Tanggal Nyata)
+  // Menghitung rentang tanggal presisi: Tgl Mulai s/d Tgl Selesai
+  const getWeekRange = (dateStr) => {
+    if (!dateStr) return { key: '9999-99-99', label: 'Tanggal Tidak Tertera', start: 0 };
     try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return 'Lainnya';
-      const year = d.getFullYear();
-      const monthName = d.toLocaleDateString('id-ID', { month: 'short' });
-      // Tentukan minggu ke berapa dalam bulan: 1-7 (M1), 8-14 (M2), 15-21 (M3), 22+ (M4/M5)
-      const day = d.getDate();
-      const weekNum = Math.ceil(day / 7);
-      return `Minggu ${weekNum} (${monthName} ${year})`;
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return { key: '9999-99-99', label: 'Tanggal Tidak Tertera', start: 0 };
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      if (isNaN(d.getTime())) return { key: '9999-99-99', label: 'Tanggal Tidak Tertera', start: 0 };
+
+      // Cari hari Senin di minggu tersebut (Day 0 = Minggu, 1 = Senin, ...)
+      const dayOfWeek = d.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diffToMonday);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const opt = { day: 'numeric', month: 'short' };
+      const optWithYear = { day: 'numeric', month: 'short', year: 'numeric' };
+
+      const formatSameYear = monday.getFullYear() === sunday.getFullYear();
+      const mondayStr = monday.toLocaleDateString('id-ID', formatSameYear ? opt : optWithYear);
+      const sundayStr = sunday.toLocaleDateString('id-ID', optWithYear);
+
+      const key = monday.toISOString().split('T')[0];
+      const label = `${mondayStr} - ${sundayStr}`;
+      return { key, label, start: monday.getTime() };
     } catch {
-      return 'Lainnya';
+      return { key: '9999-99-99', label: 'Tanggal Tidak Tertera', start: 0 };
     }
   };
 
@@ -59,26 +75,29 @@ export default function LaporanPdfModal({
       totalBelumLunas += amt;
     }
 
-    const weekKey = getWeekKey(item.tanggal);
-    if (!weeklySummary[weekKey]) {
-      weeklySummary[weekKey] = {
-        label: weekKey,
+    const weekInfo = getWeekRange(item.tanggal);
+    if (!weeklySummary[weekInfo.key]) {
+      weeklySummary[weekInfo.key] = {
+        key: weekInfo.key,
+        label: weekInfo.label,
+        start: weekInfo.start,
         total: 0,
         harusDibayar: 0, // Belum lunas / pending
         sudahDibayar: 0,
         count: 0
       };
     }
-    weeklySummary[weekKey].total += amt;
-    weeklySummary[weekKey].count += 1;
+    weeklySummary[weekInfo.key].total += amt;
+    weeklySummary[weekInfo.key].count += 1;
     if (isLunas) {
-      weeklySummary[weekKey].sudahDibayar += amt;
+      weeklySummary[weekInfo.key].sudahDibayar += amt;
     } else {
-      weeklySummary[weekKey].harusDibayar += amt;
+      weeklySummary[weekInfo.key].harusDibayar += amt;
     }
   });
 
-  const weeklyList = Object.values(weeklySummary);
+  // Urutkan minggu dari yang paling baru / terkini ke minggu lampau
+  const weeklyList = Object.values(weeklySummary).sort((a, b) => b.start - a.start);
 
   const handlePrint = () => {
     window.print();
