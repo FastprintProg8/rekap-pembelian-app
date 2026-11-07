@@ -314,40 +314,6 @@ export default function LaporanPdfModal({
             </div>
           </div>
 
-          {/* KOTAK RINGKASAN: TOTAL PER MINGGU & TOTAL HARUS DIBAYAR */}
-          <div className="avoid-break">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-teal-700" />
-              Ringkasan Kewajiban Pembayaran Per Minggu
-            </h3>
-
-            {/* Tabel Rincian Per Minggu */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
-                  <tr>
-                    <th className="py-2 px-3">Periode Minggu</th>
-                    <th className="py-2 px-3 text-center">Jml Transaksi</th>
-                    <th className="py-2 px-3 text-right">Sudah Dibayar</th>
-                    <th className="py-2 px-3 text-right bg-amber-50 text-amber-900">Harus Dibayar (Pending)</th>
-                    <th className="py-2 px-3 text-right">Total Transaksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {weeklyList.map((w, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-semibold text-slate-900">{w.label}</td>
-                      <td className="py-2 px-3 text-center text-slate-600">{w.count} nota</td>
-                      <td className="py-2 px-3 text-right text-emerald-700 font-medium">{formatRupiah(w.sudahDibayar)}</td>
-                      <td className="py-2 px-3 text-right bg-amber-50/50 text-amber-800 font-bold">{formatRupiah(w.harusDibayar)}</td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-900">{formatRupiah(w.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           {/* TABEL RINCIAN TRANSAKSI */}
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
