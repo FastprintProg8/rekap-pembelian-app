@@ -75,20 +75,20 @@ export default function TabelTransaksi({
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
       <div className="overflow-x-auto max-h-[68vh] overflow-y-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse text-xs table-fixed">
           <thead className="sticky top-0 z-20 shadow-xs">
-            <tr className="bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wider uppercase">
-              <th className="py-3 px-4 w-32">Tanggal</th>
-              <th className="py-3 px-4">Toko / Penerima</th>
-              <th className="py-3 px-4">Peruntukan</th>
-              <th className="py-3 px-4">Rincian Barang / Upah</th>
-              <th className="py-3 px-4 text-right">Total Nota</th>
-              <th className="py-3 px-4">Status & Pembayaran</th>
-              <th className="py-3 px-4 text-center">Nota & Bukti</th>
-              <th className="py-3 px-4 text-right">Aksi</th>
+            <tr className="bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold text-[11px] tracking-wider uppercase">
+              <th className="py-2.5 px-3 w-[110px]">Tanggal</th>
+              <th className="py-2.5 px-3 w-[170px]">Toko / Penerima</th>
+              <th className="py-2.5 px-3 w-[80px]">Cabang</th>
+              <th className="py-2.5 px-3 min-w-[180px]">Rincian Barang / Upah</th>
+              <th className="py-2.5 px-3 text-right w-[110px]">Total Nota</th>
+              <th className="py-2.5 px-3 w-[145px]">Status Bayar</th>
+              <th className="py-2.5 px-2 text-center w-[75px]">Bukti</th>
+              <th className="py-2.5 px-2 text-right w-[65px]">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 text-xs">
             {currentItems.map(item => {
               const status = item.status || 'belum';
               const totalAmount = Number(item.totalNota ?? item.totalHitungan ?? 0);
@@ -97,67 +97,67 @@ export default function TabelTransaksi({
               return (
                 <tr key={item.id} className="hover:bg-slate-50/60 transition group">
                   {/* Tanggal Terpisah di Depan */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="font-semibold text-slate-800 text-xs">
+                  <td className="py-2.5 px-3 whitespace-nowrap">
+                    <span className="font-semibold text-slate-800 text-[11px]">
                       {formatTanggal(item.tanggal)}
                     </span>
                   </td>
 
                   {/* Toko / Penerima */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-slate-900">{item.toko || 'Toko Tanpa Nama'}</span>
+                  <td className="py-2.5 px-3">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="font-semibold text-slate-900 truncate max-w-[110px]" title={item.toko}>
+                        {item.toko || 'Toko Tanpa Nama'}
+                      </span>
                       {item.kategori === 'gaji' ? (
-                        <span className="inline-flex items-center text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded">
-                          💼 Gaji
+                        <span className="inline-flex items-center text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 py-0.2 rounded">
+                          Gaji
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
-                          📦 Barang
+                        <span className="inline-flex items-center text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.2 rounded">
+                          Barang
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                      {item.platform && <span className="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[11px]">{item.platform}</span>}
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                      {item.platform && <span className="bg-slate-100 text-slate-600 px-1 py-0.2 rounded text-[10px]">{item.platform}</span>}
+                      {item.noPesanan && <span className="text-slate-400 font-mono">#{item.noPesanan}</span>}
                     </div>
-                    {item.noPesanan && (
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">#{item.noPesanan}</div>
-                    )}
                   </td>
 
                   {/* Peruntukan */}
-                  <td className="py-3.5 px-4">
-                    <span className="inline-block bg-teal-50 text-teal-800 border border-teal-200 text-xs font-semibold px-2 py-0.5 rounded-md">
+                  <td className="py-2.5 px-3 whitespace-nowrap">
+                    <span className="inline-block bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-semibold px-1.5 py-0.5 rounded">
                       {item.peruntukan || '-'}
                     </span>
                   </td>
 
                   {/* Items Summary */}
-                  <td className="py-3.5 px-4 max-w-xs">
-                    <div className="text-xs text-slate-800 font-medium truncate">
+                  <td className="py-2.5 px-3">
+                    <div className="text-[11px] text-slate-800 font-medium truncate" title={itemsList.map(it => `${it.nama} (${it.qty} ${it.satuan || ''})`).join(', ')}>
                       {itemsList.length > 0 ? itemsList.map(it => `${it.nama} (${it.qty} ${it.satuan || ''})`).join(', ') : '-'}
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">
-                      {itemsList.length} macam barang
+                    <div className="text-[10px] text-slate-400">
+                      {itemsList.length} macam
                     </div>
                   </td>
 
                   {/* Total Nota */}
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                  <td className="py-2.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap text-xs">
                     {formatRupiah(totalAmount)}
                   </td>
 
                   {/* Status & Bayar */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex flex-col gap-1.5 items-start">
+                  <td className="py-2.5 px-3">
+                    <div className="flex flex-col gap-1 items-start">
                       {status === 'belum' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                            <Clock className="w-3 h-3" /> Belum diproses
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full">
+                            <Clock className="w-2.5 h-2.5" /> Belum
                           </span>
                           <button
                             onClick={() => onQuickPay(item)}
-                            className="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-1.5 py-0.5 rounded transition cursor-pointer"
+                            className="text-[9px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-1.5 py-0.2 rounded transition cursor-pointer"
                             title="Lunasi Sekarang"
                           >
                             + Lunasi
@@ -165,13 +165,13 @@ export default function TabelTransaksi({
                         </div>
                       )}
                       {status === 'diproses' && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                            Diproses ({item.akun || 'Akun'})
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full">
+                            Diproses
                           </span>
                           <button
                             onClick={() => onQuickPay(item)}
-                            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded transition cursor-pointer"
+                            className="text-[9px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.2 rounded transition cursor-pointer"
                             title="Tandai Sudah Lunas"
                           >
                             ✓ Lunas
@@ -179,16 +179,16 @@ export default function TabelTransaksi({
                         </div>
                       )}
                       {status === 'dibayar' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                          <CheckCircle className="w-3 h-3" /> Dibayar {item.tglBayar ? `(${formatTanggal(item.tglBayar)})` : ''}
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full">
+                          <CheckCircle className="w-2.5 h-2.5" /> Lunas {item.tglBayar ? `(${formatTanggal(item.tglBayar)})` : ''}
                         </span>
                       )}
                     </div>
                   </td>
 
                   {/* Foto Nota & Bukti Bayar */}
-                  <td className="py-3.5 px-4 text-center">
-                    <div className="inline-flex items-center gap-1.5">
+                  <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1">
                       {item.fotoNota ? (
                         <button
                           type="button"
@@ -196,10 +196,10 @@ export default function TabelTransaksi({
                             src: item.fotoNota, 
                             title: `Nota: ${item.toko || 'Toko'} (${formatTanggal(item.tanggal)})` 
                           })}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition cursor-pointer"
+                          className="inline-flex items-center justify-center w-6 h-6 rounded bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition cursor-pointer"
                           title="Lihat Foto Nota"
                         >
-                          <ImageIcon className="w-4 h-4" />
+                          <ImageIcon className="w-3.5 h-3.5" />
                         </button>
                       ) : null}
 
@@ -210,10 +210,10 @@ export default function TabelTransaksi({
                             src: item.buktiBayar, 
                             title: `Bukti Bayar: ${item.toko || 'Toko'} (${item.akun || 'Akun'})` 
                           })}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                          className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
                           title="Lihat Bukti Bayar / Transfer"
                         >
-                          <FileCheck className="w-4 h-4" />
+                          <FileCheck className="w-3.5 h-3.5" />
                         </button>
                       ) : null}
 
@@ -224,21 +224,21 @@ export default function TabelTransaksi({
                   </td>
 
                   {/* Aksi */}
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-0.5">
                       <button
                         onClick={() => onEdit(item)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-teal-700 hover:bg-slate-100 transition cursor-pointer"
+                        className="p-1 rounded text-slate-500 hover:text-teal-700 hover:bg-slate-100 transition cursor-pointer"
                         title="Edit Data"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => onDelete(item.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                         title="Hapus"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>
@@ -249,13 +249,13 @@ export default function TabelTransaksi({
           {/* Sticky TFOOT untuk Total Keseluruhan dalam Periode Tersebut */}
           <tfoot className="sticky bottom-0 z-20 shadow-xs border-t border-slate-300">
             <tr className="bg-slate-100/95 backdrop-blur-xs text-slate-800 text-xs">
-              <td colSpan={4} className="py-2 px-4 text-right font-semibold">
+              <td colSpan={4} className="py-2 px-3 text-right font-semibold">
                 Total Periode ({totalCount} trx):
               </td>
-              <td className="py-2 px-4 text-right font-bold text-teal-800 text-xs whitespace-nowrap">
+              <td className="py-2 px-3 text-right font-bold text-teal-800 text-xs whitespace-nowrap">
                 {formatRupiah(grandTotal)}
               </td>
-              <td colSpan={3} className="py-2 px-4"></td>
+              <td colSpan={3} className="py-2 px-3"></td>
             </tr>
           </tfoot>
         </table>
