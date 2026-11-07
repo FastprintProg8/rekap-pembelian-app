@@ -24,7 +24,19 @@ export default function TabelTransaksi({
   const limit = isServerSide ? pagination.limit : ITEMS_PER_PAGE;
   const startIndex = (page - 1) * limit;
 
-  const currentItems = isServerSide ? items : items.slice(startIndex, startIndex + limit);
+  // Pastikan data selalu diurutkan: belum lunas (belum, diproses) di atas, lalu tanggal terbaru
+  const sortedItems = [...items].sort((a, b) => {
+    const getPriority = (st) => (st === 'belum' ? 1 : st === 'diproses' ? 2 : 3);
+    const prioA = getPriority(a.status || 'belum');
+    const prioB = getPriority(b.status || 'belum');
+    if (prioA !== prioB) return prioA - prioB;
+    const tA = a.tanggal || '';
+    const tB = b.tanggal || '';
+    if (tA !== tB) return tB.localeCompare(tA);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  const currentItems = isServerSide ? sortedItems : sortedItems.slice(startIndex, startIndex + limit);
 
   const handlePrev = () => {
     const target = Math.max(page - 1, 1);

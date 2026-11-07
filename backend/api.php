@@ -293,7 +293,7 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
 
     // Ambil baris dengan LIMIT & OFFSET
     // Prioritaskan yang belum/diproses (belum selesai dibayar) ditaruh paling atas
-    $orderSql = "CASE WHEN p.status = 'belum' THEN 1 WHEN p.status = 'diproses' THEN 2 ELSE 3 END ASC, p.tanggal DESC, p.createdAt DESC";
+    $orderSql = "CASE WHEN LOWER(TRIM(COALESCE(p.status, ''))) = 'belum' THEN 1 WHEN LOWER(TRIM(COALESCE(p.status, ''))) = 'diproses' THEN 2 ELSE 3 END ASC, p.tanggal DESC, p.createdAt DESC";
     $listSql = "SELECT p.* FROM pembelian p $whereSql ORDER BY $orderSql LIMIT $limit OFFSET $offset";
     $listStmt = $pdo->prepare($listSql);
     $listStmt->execute($params);
@@ -343,7 +343,8 @@ if ($uri === '/api/pembelian' && $method === 'GET') {
 
 // 1. GET /api/state
 if ($uri === '/api/state' && $method === 'GET') {
-    $pQuery = $pdo->query("SELECT * FROM pembelian ORDER BY tanggal DESC, createdAt DESC");
+    $orderSql = "CASE WHEN LOWER(TRIM(COALESCE(status, ''))) = 'belum' THEN 1 WHEN LOWER(TRIM(COALESCE(status, ''))) = 'diproses' THEN 2 ELSE 3 END ASC, tanggal DESC, createdAt DESC";
+    $pQuery = $pdo->query("SELECT * FROM pembelian ORDER BY $orderSql");
     $pembelian = $pQuery->fetchAll();
 
     $iQuery = $pdo->query("SELECT * FROM pembelian_items ORDER BY pembelian_id, urutan ASC");
