@@ -34,6 +34,14 @@ export default function App() {
   const [pagination, setPagination] = useState(null);
   const [serverStats, setServerStats] = useState(null);
 
+  // Modals & Drawer State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isMasterOpen, setIsMasterOpen] = useState(false);
+  const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPdfOpen, setIsPdfOpen] = useState(false);
+
   // Buka modal cetak PDF: Pastikan mengambil seluruh data sesuai filter aktif
   const [pdfItems, setPdfItems] = useState([]);
 
@@ -61,11 +69,6 @@ export default function App() {
     }
     setIsPdfOpen(true);
   };
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [isMasterOpen, setIsMasterOpen] = useState(false);
-  const [isBackupOpen, setIsBackupOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isPdfOpen, setIsPdfOpen] = useState(false);
 
   // Load Initial Data & PWA Listener
   useEffect(() => {
