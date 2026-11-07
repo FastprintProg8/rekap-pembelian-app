@@ -251,7 +251,7 @@ export default function TabelTransaksi({
           <tfoot className="sticky bottom-0 z-20 shadow-xs border-t border-slate-300">
             <tr className="bg-slate-100/95 backdrop-blur-xs text-slate-800 text-xs">
               <td colSpan={4} className="py-2 px-3 text-right font-semibold">
-                Total Periode ({totalCount} trx):
+                Total Tagihan ({totalCount} trx):
               </td>
               <td className="py-2 px-3 text-right font-bold text-teal-800 text-xs whitespace-nowrap">
                 {formatRupiah(grandTotal)}
@@ -396,7 +396,7 @@ export default function TabelTransaksi({
 
         {/* Total Ringkasan Khusus Mobile */}
         <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800">
-          <span>Total Periode ({totalCount} trx):</span>
+          <span>Total Tagihan ({totalCount} trx):</span>
           <span className="text-sm font-black text-teal-800">{formatRupiah(grandTotal)}</span>
         </div>
       </div>

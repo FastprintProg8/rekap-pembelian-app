@@ -529,7 +529,7 @@ export default function FormPembelianModal({
             {/* Total / Subtotal Rincian di bagian bawah list rincian */}
             <div className="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 bg-white/70 px-3 py-2 rounded-lg">
               <span className="font-semibold">
-                {formData.kategori === 'gaji' ? 'Total Upah / Gaji:' : 'Total Rincian Barang:'}
+                {formData.kategori === 'gaji' ? 'Total Upah / Gaji:' : 'Total Harga Barang:'}
               </span>
               <span className="font-bold text-slate-900 text-sm">
                 {formatRupiah(formData.items.reduce((acc, it) => acc + ((Number(it.qty) || 1) * (Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0))), 0))}
