@@ -688,13 +688,12 @@ export default function FormPembelianModal({
       </div>
 
       {/* Modal Preview Gambar Besar */}
-      {previewImage && (
-        <ImagePreviewModal
-          src={previewImage.src}
-          title={previewImage.title}
-          onClose={() => setPreviewImage(null)}
-        />
-      )}
+      <ImagePreviewModal
+        isOpen={!!previewImage}
+        src={previewImage?.src}
+        title={previewImage?.title}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   );
 }

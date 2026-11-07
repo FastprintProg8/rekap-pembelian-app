@@ -8,7 +8,10 @@ export default function ImagePreviewModal({ isOpen, onClose, src, title = 'Foto 
   const resolvedUrl = resolveImageUrl(src);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
       <div 
         className="relative max-w-4xl w-full max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200"
         onClick={(e) => e.stopPropagation()}
