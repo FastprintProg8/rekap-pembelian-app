@@ -81,142 +81,7 @@ export default function LaporanPdfModal({
   const weeklyList = Object.values(weeklySummary);
 
   const handlePrint = () => {
-    const printContent = document.getElementById('area-laporan-pdf');
-    if (!printContent) return;
-
-    // Buat iframe tersembunyi khusus untuk mencetak dokumen
-    let iframe = document.getElementById('print-iframe');
-    if (iframe) {
-      document.body.removeChild(iframe);
-    }
-    iframe = document.createElement('iframe');
-    iframe.id = 'print-iframe';
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html lang="id">
-        <head>
-          <meta charset="UTF-8">
-          <title>Laporan Rekap Kost G23</title>
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 12mm 10mm 12mm 10mm;
-            }
-            * {
-              box-sizing: border-box;
-              margin: 0;
-              padding: 0;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            }
-            body {
-              background: #fff;
-              color: #1e293b;
-              font-size: 11px;
-              line-height: 1.4;
-              padding: 10px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              page-break-inside: auto;
-            }
-            tr {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            thead {
-              display: table-header-group;
-            }
-            tfoot {
-              display: table-footer-group;
-            }
-            .avoid-break {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            /* Styling persis Tailwind */
-            .border-b-2 { border-bottom: 2px solid #0f172a; }
-            .border-b { border-bottom: 1px solid #cbd5e1; }
-            .border-t { border-top: 1px solid #cbd5e1; }
-            .border-t-2 { border-top: 2px solid #94a3b8; }
-            .border-r { border-right: 1px solid #e2e8f0; }
-            .border { border: 1px solid #cbd5e1; }
-            .rounded-xl { border-radius: 8px; }
-            .rounded-full { border-radius: 9999px; }
-            .p-3 { padding: 10px; }
-            .p-3\\.5 { padding: 12px; }
-            .py-2 { padding-top: 6px; padding-bottom: 6px; }
-            .px-2\\.5 { padding-left: 8px; padding-right: 8px; }
-            .px-3 { padding-left: 10px; padding-right: 10px; }
-            .py-2\\.5 { padding-top: 8px; padding-bottom: 8px; }
-            .mb-1 { margin-bottom: 4px; }
-            .mb-2\\.5 { margin-bottom: 8px; }
-            .mb-4 { margin-bottom: 14px; }
-            .mb-6 { margin-bottom: 18px; }
-            .pb-4 { padding-bottom: 14px; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: 700; }
-            .font-semibold { font-weight: 600; }
-            .font-black { font-weight: 900; }
-            .font-medium { font-weight: 500; }
-            .uppercase { text-transform: uppercase; }
-            .whitespace-nowrap { white-space: nowrap; }
-            .text-xs { font-size: 11px; }
-            .text-lg { font-size: 16px; }
-            .text-2xl { font-size: 20px; }
-            .text-\\[10px\\] { font-size: 9.5px; }
-            .text-\\[11px\\] { font-size: 10.5px; }
-            .text-slate-900 { color: #0f172a; }
-            .text-slate-800 { color: #1e293b; }
-            .text-slate-700 { color: #334155; }
-            .text-slate-600 { color: #475569; }
-            .text-slate-500 { color: #64748b; }
-            .text-amber-700 { color: #b45309; }
-            .text-amber-800 { color: #92400e; }
-            .text-amber-900 { color: #78350f; }
-            .text-emerald-700 { color: #047857; }
-            .text-emerald-800 { color: #065f46; }
-            .text-emerald-900 { color: #064e3b; }
-            .text-blue-800 { color: #1e40af; }
-            .text-teal-700 { color: #0f766e; }
-            .text-teal-800 { color: #115e59; }
-            .bg-slate-100 { background-color: #f1f5f9; }
-            .bg-slate-50 { background-color: #f8fafc; }
-            .bg-amber-50 { background-color: #fffbeb; }
-            .bg-amber-100 { background-color: #fef3c7; }
-            .bg-emerald-50 { background-color: #ecfdf5; }
-            .bg-emerald-100 { background-color: #d1fae5; }
-            .bg-blue-100 { background-color: #dbeafe; }
-            .grid { display: grid; }
-            .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .gap-3 { gap: 10px; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .items-center { align-items: center; }
-          </style>
-        </head>
-        <body>
-          ${printContent.innerHTML}
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    }, 400);
+    window.print();
   };
 
   return (
@@ -226,24 +91,25 @@ export default function LaporanPdfModal({
         @media print {
           @page {
             size: A4 portrait;
-            margin: 12mm 10mm 12mm 10mm;
+            margin: 10mm 10mm 12mm 10mm;
           }
-          /* Sembunyikan seluruh isi aplikasi web saat print */
-          body * {
-            visibility: hidden;
+          /* Sembunyikan semua elemen di luar area modal */
+          body > *:not(#root) {
+            display: none !important;
           }
-          /* Hanya tampilkan area laporan PDF modal */
-          #area-laporan-pdf, #area-laporan-pdf * {
-            visibility: visible;
-          }
-          #area-laporan-pdf {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100% !important;
-            margin: 0 !important;
+          /* Hanya tampilkan modal dan hilangkan backdrop */
+          .fixed {
+            position: static !important;
+            background: transparent !important;
             padding: 0 !important;
-            background-color: #fff !important;
+          }
+          .shadow-2xl, .border {
+            box-shadow: none !important;
+            border: none !important;
+          }
+          /* Sembunyikan elemen utama web app */
+          header, main, [role="dialog"] ~ * {
+            display: none !important;
           }
           body {
             background-color: #fff !important;
@@ -298,7 +164,7 @@ export default function LaporanPdfModal({
         </div>
 
         {/* Printable Document Area */}
-        <div id="area-laporan-pdf" ref={printAreaRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 print:p-0 print:overflow-visible text-slate-800">
+        <div ref={printAreaRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 print:p-0 print:overflow-visible text-slate-800">
           
           {/* Kop Dokumen */}
           <div className="border-b-2 border-slate-900 pb-4 flex flex-wrap items-center justify-between gap-4">
@@ -311,6 +177,72 @@ export default function LaporanPdfModal({
               {filterInfo.bulan && <p>Periode: <b>{filterInfo.bulan}</b></p>}
               {filterInfo.peruntukan && <p>Peruntukan: <b>{filterInfo.peruntukan}</b></p>}
               {filterInfo.kategori && <p>Tipe: <b>{filterInfo.kategori === 'gaji' ? 'Gaji Karyawan' : 'Pembelian Barang'}</b></p>}
+            </div>
+          </div>
+
+          {/* KOTAK RINGKASAN: TOTAL PER MINGGU & TOTAL HARUS DIBAYAR */}
+          <div className="avoid-break">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-teal-700" />
+              Ringkasan Kewajiban Pembayaran Per Minggu
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div className="bg-amber-50/80 border border-amber-200 p-3.5 rounded-xl">
+                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block mb-1">
+                  Total Harus Dibayar (Pending)
+                </span>
+                <span className="text-lg font-black text-amber-700 block">
+                  {formatRupiah(totalBelumLunas)}
+                </span>
+                <span className="text-[10px] text-amber-800">Prioritas untuk segera diselesaikan</span>
+              </div>
+
+              <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl">
+                <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block mb-1">
+                  Total Sudah Dibayar (Lunas)
+                </span>
+                <span className="text-lg font-black text-emerald-700 block">
+                  {formatRupiah(totalLunas)}
+                </span>
+                <span className="text-[10px] text-emerald-800">Transaksi berstatus lunas</span>
+              </div>
+
+              <div className="bg-slate-100 border border-slate-200 p-3.5 rounded-xl">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                  Total Keseluruhan Periode
+                </span>
+                <span className="text-lg font-black text-slate-900 block">
+                  {formatRupiah(grandTotal)}
+                </span>
+                <span className="text-[10px] text-slate-600">{sortedItems.length} transaksi tercatat</span>
+              </div>
+            </div>
+
+            {/* Tabel Rincian Per Minggu */}
+            <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                  <tr>
+                    <th className="py-2 px-3">Periode Minggu</th>
+                    <th className="py-2 px-3 text-center">Jml Transaksi</th>
+                    <th className="py-2 px-3 text-right">Sudah Dibayar</th>
+                    <th className="py-2 px-3 text-right bg-amber-50 text-amber-900">Harus Dibayar (Pending)</th>
+                    <th className="py-2 px-3 text-right">Total Transaksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {weeklyList.map((w, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="py-2 px-3 font-semibold text-slate-900">{w.label}</td>
+                      <td className="py-2 px-3 text-center text-slate-600">{w.count} nota</td>
+                      <td className="py-2 px-3 text-right text-emerald-700 font-medium">{formatRupiah(w.sudahDibayar)}</td>
+                      <td className="py-2 px-3 text-right bg-amber-50/50 text-amber-800 font-bold">{formatRupiah(w.harusDibayar)}</td>
+                      <td className="py-2 px-3 text-right font-bold text-slate-900">{formatRupiah(w.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
