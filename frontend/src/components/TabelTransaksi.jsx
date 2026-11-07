@@ -74,7 +74,8 @@ export default function TabelTransaksi({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-      <div className="overflow-x-auto max-h-[68vh] overflow-y-auto">
+      {/* Tampilan Tabel untuk Layar Desktop/Tablet (md ke atas) */}
+      <div className="hidden md:block overflow-x-auto max-h-[68vh] overflow-y-auto">
         <table className="w-full text-left border-collapse text-xs table-fixed">
           <thead className="sticky top-0 z-20 shadow-xs">
             <tr className="bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold text-[11px] tracking-wider uppercase">
@@ -259,6 +260,145 @@ export default function TabelTransaksi({
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      {/* Tampilan Khusus Mobile Screen (< md): Kartu Transaksi Responsif */}
+      <div className="block md:hidden divide-y divide-slate-100 max-h-[75vh] overflow-y-auto p-2 space-y-2.5">
+        {currentItems.map(item => {
+          const status = item.status || 'belum';
+          const totalAmount = Number(item.totalNota ?? item.totalHitungan ?? 0);
+          const itemsList = item.items || [];
+
+          return (
+            <div key={item.id} className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2">
+              {/* Header Kartu: Toko & Tanggal */}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-bold text-slate-900 text-sm">{item.toko || 'Toko Tanpa Nama'}</span>
+                    {item.kategori === 'gaji' ? (
+                      <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded">
+                        Gaji
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded">
+                        Barang
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                    <span>{formatTanggal(item.tanggal)}</span>
+                    {item.peruntukan && (
+                      <span className="bg-teal-50 text-teal-800 font-semibold px-1.5 py-0.2 rounded text-[10px]">
+                        {item.peruntukan}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="font-extrabold text-slate-900 text-sm">
+                    {formatRupiah(totalAmount)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rincian Barang / Upah */}
+              <div className="bg-slate-50/80 p-2 rounded-lg text-xs text-slate-700 border border-slate-100">
+                <span className="font-semibold text-slate-500 text-[10px] uppercase block mb-0.5">Rincian:</span>
+                <p className="leading-relaxed">
+                  {itemsList.length > 0 ? itemsList.map(it => `${it.nama} (${it.qty} ${it.satuan || ''})`).join(', ') : '-'}
+                </p>
+              </div>
+
+              {/* Footer Kartu: Status Bayar, Bukti & Tombol Aksi */}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-100 gap-2">
+                <div>
+                  {status === 'belum' && (
+                    <div className="flex items-center gap-1">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                        <Clock className="w-3 h-3" /> Belum
+                      </span>
+                      <button
+                        onClick={() => onQuickPay(item)}
+                        className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded transition cursor-pointer"
+                      >
+                        + Lunasi
+                      </button>
+                    </div>
+                  )}
+                  {status === 'diproses' && (
+                    <div className="flex items-center gap-1">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                        Diproses
+                      </span>
+                      <button
+                        onClick={() => onQuickPay(item)}
+                        className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded transition cursor-pointer"
+                      >
+                        ✓ Lunas
+                      </button>
+                    </div>
+                  )}
+                  {status === 'dibayar' && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      <CheckCircle className="w-3 h-3" /> Lunas {item.tglBayar ? `(${formatTanggal(item.tglBayar)})` : ''}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {item.fotoNota && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage({ 
+                        src: item.fotoNota, 
+                        title: `Nota: ${item.toko || 'Toko'} (${formatTanggal(item.tanggal)})` 
+                      })}
+                      className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200"
+                      title="Lihat Foto Nota"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {item.buktiBayar && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage({ 
+                        src: item.buktiBayar, 
+                        title: `Bukti: ${item.toko || 'Toko'}` 
+                      })}
+                      className="p-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200"
+                      title="Lihat Bukti Bayar"
+                    >
+                      <FileCheck className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onEdit(item)}
+                    className="p-1.5 rounded-lg text-slate-600 bg-slate-100"
+                    title="Edit"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(item.id)}
+                    className="p-1.5 rounded-lg text-rose-600 bg-rose-50"
+                    title="Hapus"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Total Ringkasan Khusus Mobile */}
+        <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800">
+          <span>Total Periode ({totalCount} trx):</span>
+          <span className="text-sm font-black text-teal-800">{formatRupiah(grandTotal)}</span>
+        </div>
       </div>
 
       {/* Pagination Bar */}
