@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Sparkles, Upload, AlertTriangle, Check, Camera } from 'lucide-react';
+import { X, Plus, Trash2, Sparkles, Upload, AlertTriangle, Check, Camera, ZoomIn } from 'lucide-react';
 import { formatRupiah, hitungTotalHitungan, generateId, resolveImageUrl } from '../utils/formatters';
+import ImagePreviewModal from './ImagePreviewModal';
 import { api } from '../services/api';
 
 const DRAFT_KEY = 'rekap-pembelian:form-draft';
@@ -38,6 +39,7 @@ export default function FormPembelianModal({
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     if (initialData) {
@@ -327,14 +329,30 @@ export default function FormPembelianModal({
               </label>
 
               {formData.fotoNota && (
-                <div className="relative group w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-200">
-                  <img src={resolveImageUrl(formData.fotoNota)} alt="Preview Nota" className="w-full h-full object-cover" />
+                <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <div
+                    onClick={() => setPreviewImage({
+                      src: formData.fotoNota,
+                      title: `Preview Nota: ${formData.toko || 'Nota Pembelian'}`
+                    })}
+                    className="relative group w-16 h-16 rounded-xl overflow-hidden border-2 border-teal-500/40 cursor-pointer shadow-xs hover:ring-2 hover:ring-teal-400 transition"
+                    title="Klik untuk melihat preview besar"
+                  >
+                    <img src={resolveImageUrl(formData.fotoNota)} alt="Preview Nota" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-900/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                      <ZoomIn className="w-5 h-5 drop-shadow" />
+                    </div>
+                  </div>
+
+                  {/* Tombol Hapus Foto di Bawah Preview */}
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, fotoNota: '' }))}
-                    className="absolute inset-0 bg-slate-900/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                    className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-0.5 rounded transition flex items-center gap-1 cursor-pointer"
+                    title="Hapus Foto Nota"
                   >
-                    <X className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3" />
+                    <span>Hapus</span>
                   </button>
                 </div>
               )}
@@ -668,6 +686,15 @@ export default function FormPembelianModal({
         </div>
 
       </div>
+
+      {/* Modal Preview Gambar Besar */}
+      {previewImage && (
+        <ImagePreviewModal
+          src={previewImage.src}
+          title={previewImage.title}
+          onClose={() => setPreviewImage(null)}
+        />
+      )}
     </div>
   );
 }
