@@ -33,6 +33,7 @@ export default function FormPembelianModal({
     tglBayar: '',
     keterangan: '',
     fotoNota: '',
+    buktiBayar: '',
     items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
   });
 
@@ -58,6 +59,8 @@ export default function FormPembelianModal({
         ongkir: initialData.ongkir || 0,
         biaya: initialData.biaya || 0,
         totalNota: initialData.totalNota !== null ? initialData.totalNota : '',
+        fotoNota: initialData.fotoNota || '',
+        buktiBayar: initialData.buktiBayar || '',
         items: normalizedItems.length > 0 ? normalizedItems : [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
       });
     } else {
@@ -96,6 +99,7 @@ export default function FormPembelianModal({
           tglBayar: '',
           keterangan: '',
           fotoNota: '',
+          buktiBayar: '',
           items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
         });
       }
@@ -186,6 +190,18 @@ export default function FormPembelianModal({
           setIsScanning(false);
         }
       }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload Bukti Bayar / Pelunasan
+  const handleBuktiBayarUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData(prev => ({ ...prev, buktiBayar: reader.result }));
     };
     reader.readAsDataURL(file);
   };
@@ -648,6 +664,51 @@ export default function FormPembelianModal({
                   onChange={e => setFormData({ ...formData, tglBayar: e.target.value })}
                   className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
+              </div>
+            </div>
+
+            {/* Upload Bukti Pembayaran / Pelunasan (buktiBayar) */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="text-xs font-semibold text-slate-700">
+                  Bukti Pembayaran / Transfer Pelunasan
+                </label>
+                <span className="text-[11px] text-slate-400">Opsional (Struk ATM, M-Banking, dll)</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <label className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 hover:border-teal-500 bg-white hover:bg-teal-50/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-700 cursor-pointer transition">
+                  <Upload className="w-4 h-4 text-slate-400" />
+                  <span>{formData.buktiBayar ? 'Ganti Foto Bukti Bayar' : 'Pilih Foto Bukti Bayar / Transfer'}</span>
+                  <input type="file" accept="image/*" onChange={handleBuktiBayarUpload} className="hidden" />
+                </label>
+
+                {formData.buktiBayar && (
+                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    <div
+                      onClick={() => setPreviewImage({
+                        src: formData.buktiBayar,
+                        title: `Bukti Bayar: ${formData.toko || 'Transaksi'} (${formData.akun || 'Lunas'})`
+                      })}
+                      className="relative group w-14 h-14 rounded-xl overflow-hidden border-2 border-blue-500/40 cursor-pointer shadow-xs hover:ring-2 hover:ring-blue-400 transition"
+                      title="Klik untuk melihat preview besar"
+                    >
+                      <img src={resolveImageUrl(formData.buktiBayar)} alt="Preview Bukti Bayar" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-900/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <ZoomIn className="w-4 h-4 drop-shadow" />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, buktiBayar: '' }))}
+                      className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-0.5 rounded transition flex items-center gap-1 cursor-pointer"
+                      title="Hapus Bukti Bayar"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

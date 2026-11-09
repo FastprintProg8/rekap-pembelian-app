@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
-import { X, Printer, Download, Calendar, DollarSign, CheckCircle2, Clock } from 'lucide-react';
-import { formatRupiah, formatTanggal } from '../utils/formatters';
+import { X, Printer, Download, Calendar, DollarSign, CheckCircle2, Clock, Image as ImageIcon, FileCheck } from 'lucide-react';
+import { formatRupiah, formatTanggal, resolveImageUrl } from '../utils/formatters';
 
 export default function LaporanPdfModal({
   isOpen,
@@ -149,6 +149,10 @@ export default function LaporanPdfModal({
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
+          .page-break-before {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
         }
       `}</style>
 
@@ -291,6 +295,101 @@ export default function LaporanPdfModal({
               </tfoot>
             </table>
           </div>
+
+          {/* SECTION LAMPIRAN BUKTI TRANSAKSI & NOTA */}
+          {(() => {
+            const itemsWithImages = sortedItems.filter(it => it.fotoNota || it.buktiBayar);
+            if (itemsWithImages.length === 0) return null;
+
+            return (
+              <div className="page-break-before pt-6 border-t border-slate-300">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-slate-900">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">
+                      Lampiran Bukti Transaksi & Nota
+                    </h2>
+                    <p className="text-[11px] text-slate-600">
+                      Dokumentasi foto nota fisik dan bukti transfer pelunasan ({itemsWithImages.length} transaksi berlampiran)
+                    </p>
+                  </div>
+                  <div className="text-right text-[10px] text-slate-500 font-semibold">
+                    Lampiran Laporan Kost G23
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {itemsWithImages.map((item, idx) => {
+                    const total = Number(item.totalNota ?? item.totalHitungan ?? 0);
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className="avoid-break bg-slate-50/50 border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between"
+                      >
+                        {/* Info Ringkas Transaksi */}
+                        <div className="border-b border-slate-200 pb-2 mb-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-xs text-slate-900 line-clamp-1">
+                              [{formatTanggal(item.tanggal)}] {item.toko || 'Transaksi'}
+                            </span>
+                            <span className="text-xs font-black text-teal-800 shrink-0">
+                              {formatRupiah(total)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 mt-0.5">
+                            <span>
+                              Peruntukan: <b className="text-slate-700">{item.peruntukan || '-'}</b>
+                              {item.platform ? ` • ${item.platform}` : ''}
+                            </span>
+                            <span className={`font-bold px-1.5 py-0.2 rounded ${
+                              item.status === 'dibayar' ? 'bg-emerald-100 text-emerald-800' :
+                              item.status === 'diproses' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {item.status === 'dibayar' ? 'Lunas' : item.status === 'diproses' ? 'Diproses' : 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Foto Nota & Bukti Bayar */}
+                        <div className={`grid ${item.fotoNota && item.buktiBayar ? 'grid-cols-2' : 'grid-cols-1'} gap-2.5`}>
+                          {item.fotoNota && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                <ImageIcon className="w-3 h-3 text-teal-600" /> Foto Nota
+                              </span>
+                              <div className="w-full h-56 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-1">
+                                <img
+                                  src={resolveImageUrl(item.fotoNota)}
+                                  alt={`Nota ${item.toko}`}
+                                  className="w-full h-full object-contain"
+                                  loading="lazy"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {item.buktiBayar && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                <FileCheck className="w-3 h-3 text-blue-600" /> Bukti Pelunasan / Transfer
+                              </span>
+                              <div className="w-full h-56 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center p-1">
+                                <img
+                                  src={resolveImageUrl(item.buktiBayar)}
+                                  alt={`Bukti Bayar ${item.toko}`}
+                                  className="w-full h-full object-contain"
+                                  loading="lazy"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
 
