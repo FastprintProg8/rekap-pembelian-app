@@ -34,6 +34,7 @@ export default function FormPembelianModal({
     keterangan: '',
     fotoNota: '',
     buktiBayar: '',
+    potonganLain: [], // Array dynamic: [{ id, nama, nominal }]
     items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
   });
 
@@ -52,12 +53,24 @@ export default function FormPembelianModal({
         hargaSatuan: Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0)
       }));
 
+      let parsedPotonganLain = [];
+      try {
+        if (Array.isArray(initialData.potonganLain)) {
+          parsedPotonganLain = initialData.potonganLain;
+        } else if (typeof initialData.potonganLain === 'string' && initialData.potonganLain.trim()) {
+          parsedPotonganLain = JSON.parse(initialData.potonganLain);
+        }
+      } catch (e) {
+        parsedPotonganLain = [];
+      }
+
       setFormData({
         ...initialData,
         kategori: initialData.kategori || 'barang',
         diskon: initialData.diskon || 0,
         ongkir: initialData.ongkir || 0,
         biaya: initialData.biaya || 0,
+        potonganLain: Array.isArray(parsedPotonganLain) ? parsedPotonganLain : [],
         totalNota: initialData.totalNota !== null ? initialData.totalNota : '',
         fotoNota: initialData.fotoNota || '',
         buktiBayar: initialData.buktiBayar || '',
@@ -100,6 +113,7 @@ export default function FormPembelianModal({
           keterangan: '',
           fotoNota: '',
           buktiBayar: '',
+          potonganLain: [],
           items: [{ id: '1', nama: '', qty: 1, satuan: 'pcs', hargaSatuan: 0 }]
         });
       }
@@ -118,8 +132,32 @@ export default function FormPembelianModal({
 
   if (!isOpen) return null;
 
-  const totalHitungan = hitungTotalHitungan(formData.items, formData.diskon, formData.ongkir, formData.biaya);
+  const totalHitungan = hitungTotalHitungan(
+    formData.items,
+    formData.diskon,
+    formData.ongkir,
+    formData.biaya,
+    formData.potonganLain
+  );
   const adaSelisih = formData.totalNota !== '' && Number(formData.totalNota) !== totalHitungan;
+
+  // Handler input potongan lain-lain dinamis
+  const handlePotonganLainChange = (index, field, value) => {
+    const list = [...(formData.potonganLain || [])];
+    list[index] = { ...list[index], [field]: value };
+    setFormData({ ...formData, potonganLain: list });
+  };
+
+  const addPotonganLain = () => {
+    const list = [...(formData.potonganLain || [])];
+    list.push({ id: Date.now().toString(), nama: '', nominal: '' });
+    setFormData({ ...formData, potonganLain: list });
+  };
+
+  const removePotonganLain = (index) => {
+    const list = (formData.potonganLain || []).filter((_, idx) => idx !== index);
+    setFormData({ ...formData, potonganLain: list });
+  };
 
   // Handler input item
   const handleItemChange = (index, field, value) => {
@@ -227,6 +265,10 @@ export default function FormPembelianModal({
       diskon: Number(formData.diskon) || 0,
       ongkir: Number(formData.ongkir) || 0,
       biaya: Number(formData.biaya) || 0,
+      potonganLain: (formData.potonganLain || []).filter(p => p.nama || p.nominal).map(p => ({
+        ...p,
+        nominal: Number(p.nominal) || 0
+      })),
       items: formData.items.map(it => {
         const hrg = Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0);
         return {
@@ -631,7 +673,7 @@ export default function FormPembelianModal({
           {/* Section 4: Biaya, Diskon, & Total */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Diskon / Potongan</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Diskon Nota</label>
               <input
                 type="number"
                 min="0"
@@ -670,6 +712,73 @@ export default function FormPembelianModal({
                 className="w-full text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
+          </div>
+
+          {/* Section 4B: Potongan / Pengurangan Biaya Lain-Lain Dinamis */}
+          <div className="border border-rose-200/70 rounded-xl p-3.5 bg-rose-50/30">
+            <div className="flex items-center justify-between mb-2.5">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
+                  Potongan Lain-Lain (Dinamis)
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Untuk mengurangi total nominal jika ada potongan khusus/biaya pengurang lainnya.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addPotonganLain}
+                className="text-xs font-semibold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-white hover:bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-lg transition shadow-2xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-rose-600" /> Tambah Potongan
+              </button>
+            </div>
+
+            {(!formData.potonganLain || formData.potonganLain.length === 0) ? (
+              <div className="text-center py-2.5 text-xs text-slate-400 bg-white/60 rounded-lg border border-dashed border-rose-200/80">
+                Belum ada potongan lain-lain. Klik <b className="text-rose-700">+ Tambah Potongan</b> jika ingin mengurangi total nominal.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {formData.potonganLain.map((pot, pIdx) => (
+                  <div key={pot.id || pIdx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-rose-200 shadow-2xs">
+                    <input
+                      type="text"
+                      placeholder="Keterangan potongan (misal: Diskon Khusus, Retur, Biaya Terbatal)..."
+                      value={pot.nama || ''}
+                      onChange={e => handlePotonganLainChange(pIdx, 'nama', e.target.value)}
+                      className="flex-1 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                    <div className="relative w-36 sm:w-44">
+                      <span className="absolute left-2 top-1.5 text-xs font-bold text-rose-500">- Rp</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Nominal"
+                        value={pot.nominal || ''}
+                        onChange={e => handlePotonganLainChange(pIdx, 'nominal', e.target.value)}
+                        className="w-full text-xs p-1.5 pl-11 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-rose-500 text-right font-semibold text-rose-600"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePotonganLain(pIdx)}
+                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                      title="Hapus potongan ini"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                <div className="mt-2 pt-2 border-t border-rose-200/60 flex items-center justify-between text-xs text-rose-800 px-1">
+                  <span className="font-semibold">Total Potongan Lain:</span>
+                  <span className="font-bold text-rose-700">
+                    - {formatRupiah((formData.potonganLain || []).reduce((acc, p) => acc + (Number(p.nominal) || 0), 0))}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notifikasi Selisih */}

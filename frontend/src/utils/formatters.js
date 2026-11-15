@@ -21,9 +21,15 @@ export function hitungTotalBarang(items = []) {
   return items.reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan || it.harga_satuan) || 0)), 0);
 }
 
-export function hitungTotalHitungan(items = [], diskon = 0, ongkir = 0, biaya = 0) {
+export function hitungTotalPotonganLain(potonganLain = []) {
+  if (!Array.isArray(potonganLain)) return 0;
+  return potonganLain.reduce((acc, p) => acc + (Number(p.nominal) || 0), 0);
+}
+
+export function hitungTotalHitungan(items = [], diskon = 0, ongkir = 0, biaya = 0, potonganLain = []) {
   const barang = hitungTotalBarang(items);
-  return barang - (Number(diskon) || 0) + (Number(ongkir) || 0) + (Number(biaya) || 0);
+  const totalPotLain = hitungTotalPotonganLain(potonganLain);
+  return barang - (Number(diskon) || 0) - totalPotLain + (Number(ongkir) || 0) + (Number(biaya) || 0);
 }
 
 export function generateId() {

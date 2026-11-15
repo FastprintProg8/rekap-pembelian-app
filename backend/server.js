@@ -105,6 +105,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS pembelian (
     id TEXT PRIMARY KEY,
+    kategori TEXT DEFAULT 'barang',
     tanggal TEXT,
     toko TEXT,
     platform TEXT,
@@ -122,6 +123,7 @@ db.exec(`
     keterangan TEXT,
     fotoNota TEXT,
     buktiBayar TEXT,
+    potonganLain TEXT DEFAULT '[]',
     createdAt INTEGER
   );
 
@@ -136,6 +138,19 @@ db.exec(`
     FOREIGN KEY(pembelian_id) REFERENCES pembelian(id) ON DELETE CASCADE
   );
 `);
+
+// Pastikan kolom baru otomatis ada jika upgrade dari database lama
+try {
+  const existingCols = db.prepare('PRAGMA table_info(pembelian)').all().map(c => c.name.toLowerCase());
+  if (!existingCols.includes('kategori')) {
+    db.exec("ALTER TABLE pembelian ADD COLUMN kategori TEXT DEFAULT 'barang';");
+  }
+  if (!existingCols.includes('potonganlain')) {
+    db.exec("ALTER TABLE pembelian ADD COLUMN potonganLain TEXT DEFAULT '[]';");
+  }
+} catch (e) {
+  console.warn('Auto alter columns:', e.message);
+}
 
 // Default master config
 const DEFAULT_MASTER = {
@@ -217,8 +232,8 @@ function savePembelianRecord(p) {
   const insertPembelian = db.prepare(`
     INSERT INTO pembelian (
       id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
-      metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, potonganLain, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       kategori=excluded.kategori,
       tanggal=excluded.tanggal,
@@ -238,8 +253,11 @@ function savePembelianRecord(p) {
       keterangan=excluded.keterangan,
       fotoNota=excluded.fotoNota,
       buktiBayar=excluded.buktiBayar,
+      potonganLain=excluded.potonganLain,
       createdAt=excluded.createdAt
   `);
+
+  const potLainStr = typeof p.potonganLain === 'string' ? p.potonganLain : JSON.stringify(p.potonganLain || []);
 
   insertPembelian.run(
     p.id,
@@ -261,6 +279,7 @@ function savePembelianRecord(p) {
     p.keterangan || '',
     savedFotoNota || '',
     savedBuktiBayar || '',
+    potLainStr,
     p.createdAt || Date.now()
   );
 
@@ -383,7 +402,12 @@ const server = http.createServer((req, res) => {
 
     const total = filtered.length;
     const totalNominal = filtered.reduce((acc, p) => {
-      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((sum, it) => sum + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) + Number(p.ongkir || 0) + Number(p.biaya || 0));
+      let potLainSum = 0;
+      try {
+        const arr = typeof p.potonganLain === 'string' ? JSON.parse(p.potonganLain) : p.potonganLain;
+        if (Array.isArray(arr)) potLainSum = arr.reduce((s, x) => s + (Number(x.nominal) || 0), 0);
+      } catch (e) {}
+      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((sum, it) => sum + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) - potLainSum + Number(p.ongkir || 0) + Number(p.biaya || 0));
       return acc + tot;
     }, 0);
 
@@ -399,7 +423,12 @@ const server = http.createServer((req, res) => {
     };
     for (const p of all) {
       const st = p.status || 'belum';
-      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((acc, it) => acc + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) + Number(p.ongkir || 0) + Number(p.biaya || 0));
+      let potLainSum = 0;
+      try {
+        const arr = typeof p.potonganLain === 'string' ? JSON.parse(p.potonganLain) : p.potonganLain;
+        if (Array.isArray(arr)) potLainSum = arr.reduce((s, x) => s + (Number(x.nominal) || 0), 0);
+      } catch (e) {}
+      const tot = p.totalNota != null ? Number(p.totalNota) : ((p.items || []).reduce((acc, it) => acc + (Number(it.qty || 1) * Number(it.harga || 0)), 0) - Number(p.diskon || 0) - potLainSum + Number(p.ongkir || 0) + Number(p.biaya || 0));
       if (stats[st]) {
         stats[st].count++;
         stats[st].total += tot;

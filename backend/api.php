@@ -178,6 +178,15 @@ try {
             );
         ");
     }
+
+    // Auto-alter kolom kategori & potonganLain jika belum ada
+    if ($dbDriver === 'mysql') {
+        try { $pdo->exec("ALTER TABLE `pembelian` ADD COLUMN `kategori` VARCHAR(50) DEFAULT 'barang'"); } catch (Exception $e) {}
+        try { $pdo->exec("ALTER TABLE `pembelian` ADD COLUMN `potonganLain` LONGTEXT NULL"); } catch (Exception $e) {}
+    } else {
+        try { $pdo->exec("ALTER TABLE pembelian ADD COLUMN kategori TEXT DEFAULT 'barang'"); } catch (Exception $e) {}
+        try { $pdo->exec("ALTER TABLE pembelian ADD COLUMN potonganLain TEXT DEFAULT '[]'"); } catch (Exception $e) {}
+    }
 } catch (Exception $e) {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
@@ -398,10 +407,10 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
             $sql = "
                 INSERT INTO pembelian (
                   id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
-                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
+                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, potonganLain, createdAt
                 ) VALUES (
                   :id, :kategori, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
-                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
+                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :potonganLain, :createdAt
                 )
                 ON DUPLICATE KEY UPDATE
                   kategori=VALUES(kategori), tanggal=VALUES(tanggal), toko=VALUES(toko), platform=VALUES(platform),
@@ -409,16 +418,16 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
                   ongkir=VALUES(ongkir), biaya=VALUES(biaya), totalNota=VALUES(totalNota),
                   metode=VALUES(metode), akun=VALUES(akun), status=VALUES(status),
                   tglProses=VALUES(tglProses), tglBayar=VALUES(tglBayar), keterangan=VALUES(keterangan),
-                  fotoNota=VALUES(fotoNota), buktiBayar=VALUES(buktiBayar), createdAt=VALUES(createdAt)
+                  fotoNota=VALUES(fotoNota), buktiBayar=VALUES(buktiBayar), potonganLain=VALUES(potonganLain), createdAt=VALUES(createdAt)
             ";
         } else {
             $sql = "
                 INSERT INTO pembelian (
                   id, kategori, tanggal, toko, platform, noPesanan, peruntukan, diskon, ongkir, biaya, totalNota,
-                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, createdAt
+                  metode, akun, status, tglProses, tglBayar, keterangan, fotoNota, buktiBayar, potonganLain, createdAt
                 ) VALUES (
                   :id, :kategori, :tanggal, :toko, :platform, :noPesanan, :peruntukan, :diskon, :ongkir, :biaya, :totalNota,
-                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :createdAt
+                  :metode, :akun, :status, :tglProses, :tglBayar, :keterangan, :fotoNota, :buktiBayar, :potonganLain, :createdAt
                 )
                 ON CONFLICT(id) DO UPDATE SET
                   kategori=excluded.kategori, tanggal=excluded.tanggal, toko=excluded.toko, platform=excluded.platform,
@@ -426,7 +435,7 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
                   ongkir=excluded.ongkir, biaya=excluded.biaya, totalNota=excluded.totalNota,
                   metode=excluded.metode, akun=excluded.akun, status=excluded.status,
                   tglProses=excluded.tglProses, tglBayar=excluded.tglBayar, keterangan=excluded.keterangan,
-                  fotoNota=excluded.fotoNota, buktiBayar=excluded.buktiBayar, createdAt=excluded.createdAt
+                  fotoNota=excluded.fotoNota, buktiBayar=excluded.buktiBayar, potonganLain=excluded.potonganLain, createdAt=excluded.createdAt
             ";
         }
 
@@ -437,6 +446,7 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
         $tglProsesVal = arrGet($p, 'tglProses', '');
         $tglBayarVal = arrGet($p, 'tglBayar', '');
         $kategoriVal = arrGet($p, 'kategori', 'barang');
+        $potLainVal = isset($p['potonganLain']) ? (is_string($p['potonganLain']) ? $p['potonganLain'] : json_encode($p['potonganLain'])) : '[]';
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -459,6 +469,7 @@ if ($uri === '/api/pembelian' && $method === 'POST') {
             ':keterangan' => arrGet($p, 'keterangan', ''),
             ':fotoNota' => $savedFotoNota,
             ':buktiBayar' => $savedBuktiBayar,
+            ':potonganLain' => $potLainVal,
             ':createdAt' => intval(isset($p['createdAt']) ? $p['createdAt'] : time() * 1000)
         ]);
 
