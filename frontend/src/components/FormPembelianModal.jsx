@@ -522,141 +522,157 @@ export default function FormPembelianModal({
             </div>
 
             <div className="space-y-2.5">
-              {formData.items.map((it, idx) => (
-                <div key={it.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
-                  {/* Tampilan Desktop: 1 Baris Sejajar */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder={formData.kategori === 'gaji' ? 'Nama karyawan / pos upah...' : 'Nama barang...'}
-                      value={it.nama}
-                      onChange={e => handleItemChange(idx, 'nama', e.target.value)}
-                      className="flex-1 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                    <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="Qty"
-                      value={it.qty}
-                      onChange={e => handleItemChange(idx, 'qty', e.target.value)}
-                      className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                    {formData.kategori === 'gaji' ? (
-                      <select
-                        value={it.satuan || 'hari'}
-                        onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
-                        className="w-20 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
-                      >
-                        <option value="hari">hari</option>
-                        <option value="bulan">bulan</option>
-                        <option value="minggu">minggu</option>
-                        <option value="jam">jam</option>
-                        <option value="borongan">borongan</option>
-                        <option value="orang">orang</option>
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        placeholder="Satuan"
-                        value={it.satuan}
-                        onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
-                        className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                      />
-                    )}
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder={formData.kategori === 'gaji' ? 'Nominal Upah' : 'Harga Satuan'}
-                      value={it.hargaSatuan}
-                      onChange={e => handleItemChange(idx, 'hargaSatuan', e.target.value)}
-                      className="w-28 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-right"
-                    />
-                    {formData.items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
-                        title="Hapus baris"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+              {formData.items.map((it, idx) => {
+                const subtotalItem = (Number(it.qty) || 0) * (Number(it.hargaSatuan ?? it.harga ?? it.harga_satuan ?? 0));
 
-                  {/* Tampilan Mobile: 2 Baris Rapih, Pas Layar & Tidak Melebar Keluar */}
-                  <div className="sm:hidden space-y-2">
-                    <div className="flex items-center gap-2">
+                return (
+                  <div key={it.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                    {/* Tampilan Desktop: 1 Baris Sejajar dengan Subtotal Otomatis */}
+                    <div className="hidden sm:flex items-center gap-2">
                       <input
                         type="text"
                         required
                         placeholder={formData.kategori === 'gaji' ? 'Nama karyawan / pos upah...' : 'Nama barang...'}
                         value={it.nama}
                         onChange={e => handleItemChange(idx, 'nama', e.target.value)}
-                        className="flex-1 min-w-0 text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                        className="flex-1 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
                       />
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="Qty"
+                        value={it.qty}
+                        onChange={e => handleItemChange(idx, 'qty', e.target.value)}
+                        className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
+                      />
+                      {formData.kategori === 'gaji' ? (
+                        <select
+                          value={it.satuan || 'hari'}
+                          onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                          className="w-20 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                        >
+                          <option value="hari">hari</option>
+                          <option value="bulan">bulan</option>
+                          <option value="minggu">minggu</option>
+                          <option value="jam">jam</option>
+                          <option value="borongan">borongan</option>
+                          <option value="orang">orang</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Satuan"
+                          value={it.satuan}
+                          onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                          className="w-16 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
+                        />
+                      )}
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder={formData.kategori === 'gaji' ? 'Nominal Upah' : 'Harga Satuan'}
+                        value={it.hargaSatuan}
+                        onChange={e => handleItemChange(idx, 'hargaSatuan', e.target.value)}
+                        className="w-28 text-xs p-1.5 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 text-right"
+                      />
+                      {/* Subtotal otomatis per baris (Qty x Harga) */}
+                      <div className="w-28 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-right shrink-0">
+                        <span className="text-[10px] text-slate-400 block leading-none">Subtotal</span>
+                        <span className="text-xs font-bold text-slate-800">{formatRupiah(subtotalItem)}</span>
+                      </div>
                       {formData.items.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(idx)}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition shrink-0 cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
                           title="Hapus baris"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-12 gap-1.5 items-center">
-                      <div className="col-span-3">
+
+                    {/* Tampilan Mobile: 2 Baris Rapih + Baris Subtotal Otomatis */}
+                    <div className="sm:hidden space-y-2">
+                      <div className="flex items-center gap-2">
                         <input
-                          type="number"
-                          step="any"
-                          min="0"
-                          placeholder="Qty"
-                          value={it.qty}
-                          onChange={e => handleItemChange(idx, 'qty', e.target.value)}
-                          className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
+                          type="text"
+                          required
+                          placeholder={formData.kategori === 'gaji' ? 'Nama karyawan / pos upah...' : 'Nama barang...'}
+                          value={it.nama}
+                          onChange={e => handleItemChange(idx, 'nama', e.target.value)}
+                          className="flex-1 min-w-0 text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
                         />
-                      </div>
-                      <div className="col-span-4">
-                        {formData.kategori === 'gaji' ? (
-                          <select
-                            value={it.satuan || 'hari'}
-                            onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
-                            className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                        {formData.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition shrink-0 cursor-pointer"
+                            title="Hapus baris"
                           >
-                            <option value="hari">hari</option>
-                            <option value="bulan">bulan</option>
-                            <option value="minggu">minggu</option>
-                            <option value="jam">jam</option>
-                            <option value="borongan">borongan</option>
-                            <option value="orang">orang</option>
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            placeholder="Satuan"
-                            value={it.satuan}
-                            onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
-                            className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
-                          />
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
-                      <div className="col-span-5">
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder={formData.kategori === 'gaji' ? 'Upah' : 'Harga'}
-                          value={it.hargaSatuan}
-                          onChange={e => handleItemChange(idx, 'hargaSatuan', e.target.value)}
-                          className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-right font-medium"
-                        />
+                      <div className="grid grid-cols-12 gap-1.5 items-center">
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            placeholder="Qty"
+                            value={it.qty}
+                            onChange={e => handleItemChange(idx, 'qty', e.target.value)}
+                            className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          {formData.kategori === 'gaji' ? (
+                            <select
+                              value={it.satuan || 'hari'}
+                              onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                              className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                            >
+                              <option value="hari">hari</option>
+                              <option value="bulan">bulan</option>
+                              <option value="minggu">minggu</option>
+                              <option value="jam">jam</option>
+                              <option value="borongan">borongan</option>
+                              <option value="orang">orang</option>
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="Satuan"
+                              value={it.satuan}
+                              onChange={e => handleItemChange(idx, 'satuan', e.target.value)}
+                              className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-center"
+                            />
+                          )}
+                        </div>
+                        <div className="col-span-5">
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder={formData.kategori === 'gaji' ? 'Upah' : 'Harga'}
+                            value={it.hargaSatuan}
+                            onChange={e => handleItemChange(idx, 'hargaSatuan', e.target.value)}
+                            className="w-full text-xs p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 text-right font-medium"
+                          />
+                        </div>
+                      </div>
+                      {/* Baris Total Amount per rincian di mobile */}
+                      <div className="flex items-center justify-between pt-1 px-1 text-[11px] text-slate-500 border-t border-slate-100">
+                        <span>Total Rincian:</span>
+                        <span className="font-bold text-slate-800 text-xs">
+                          {formatRupiah(subtotalItem)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Total / Subtotal Rincian di bagian bawah list rincian */}
